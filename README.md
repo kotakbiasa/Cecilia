@@ -1,3 +1,14 @@
+# lib_change [tgbot 2.0]
+
+A new branch has been created by [@SvicHQ](https://github.com/SvicHQ).
+In this branch, the project is being migrated from `python-telegram-bot (ptb)` to the `Pyrogram fork [Kurigram]`.
+
+> Note: The last release using `python-telegram-bot` was version `1.11.3.568`. All commits going forward will use `Kurigram`.
+
+---
+
+# Original Readme 🔽
+
 # [tgbot](https://bishalqx980.github.io/tgbot) 👻
 
 This Telegram bot is built using the `python-telegram-bot` library *`version 21.9`* and performs various tasks within **Telegram**.
