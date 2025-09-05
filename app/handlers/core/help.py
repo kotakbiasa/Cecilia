@@ -1,10 +1,11 @@
 import random
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ChatType
-from telegram.error import BadRequest
-from telegram.helpers import create_deep_linked_url
-from app import logger
+
+from pyrogram import filters
+from pyrogram.types import Message
+from pyrogram.enums import ChatType
+from pyrogram.errors import BadRequest
+
+from app import bot, logger
 from app.helpers import BuildKeyboard
 from app.utils.database import MemoryDB, database_add_user
 
@@ -25,14 +26,15 @@ class HelpMenuData:
     ]
 
 
-async def func_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    chat = update.effective_chat
-    effective_message = update.effective_message
+@bot.on_message(filters.command("help", ["/", "!", "-", "."]) | filters.regex("help"))
+async def func_help(_, message: Message):
+    user = message.from_user
+    chat = message.chat
+    bot_info = await bot.get_me()
 
     if chat.type not in [ChatType.PRIVATE]:
-        btn = BuildKeyboard.ubutton([{"Click here for help": create_deep_linked_url(context.bot.username, "help")}])
-        await effective_message.reply_text(f"Hey, {user.first_name}\nContact me in PM for help!", reply_markup=btn)
+        btn = BuildKeyboard.ubutton([{"Click here for help": f"http://t.me/{bot_info.username}?start=help"}])
+        await message.reply_text(f"Hey, {user.first_name}\nContact me in PM for help!", reply_markup=btn)
         return
     
     # database entry checking if user is registered.
@@ -47,8 +49,8 @@ async def func_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         photo = random.choice(images).strip()
     elif show_bot_pic:
         try:
-            bot_photos = await context.bot.get_user_profile_photos(context.bot.id)
-            photo_file_id = bot_photos.photos[0][-1].file_id # the high quality photo file_id
+            async for bp in bot.get_chat_photos("me", 1):
+                photo_file_id = bp.file_id # the high quality photo file_id
         except:
             pass
     
@@ -56,7 +58,7 @@ async def func_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if photo or photo_file_id:
         try:
-            await effective_message.reply_photo(photo or photo_file_id, HelpMenuData.TEXT, reply_markup=btn)
+            await message.reply_photo(photo or photo_file_id, caption=HelpMenuData.TEXT, reply_markup=btn)
             return
         except BadRequest:
             pass
@@ -64,4 +66,4 @@ async def func_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error(e)
     
     # if BadRequest or No Photo or Other error
-    await effective_message.reply_text(HelpMenuData.TEXT, reply_markup=btn)
+    await message.reply_text(HelpMenuData.TEXT, reply_markup=btn)

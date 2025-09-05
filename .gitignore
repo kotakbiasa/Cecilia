@@ -5,8 +5,9 @@
 *.png
 *.txt
 *.json
+*.session*
 venv
-config.env
+config.py
 /downloads
 /temp
 /sys

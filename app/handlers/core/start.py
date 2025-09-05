@@ -1,20 +1,21 @@
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ChatType
-from telegram.helpers import create_deep_linked_url
-from telegram.error import BadRequest
-from app import ORIGINAL_BOT_USERNAME, ORIGINAL_BOT_ID, logger
+from pyrogram import filters
+from pyrogram.types import Message
+from pyrogram.enums import ChatType
+from pyrogram.errors import BadRequest
+
+from app import bot, logger, ORIGINAL_BOT_USERNAME, ORIGINAL_BOT_ID
 from app.helpers import BuildKeyboard
 from app.utils.database import MemoryDB, database_add_user
 
-async def func_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    chat = update.effective_chat
-    effective_message = update.effective_message
+@bot.on_message(filters.command("start", ["/", "!", "-", "."]))
+async def func_start(_, message: Message):
+    user = message.from_user
+    chat = message.chat
+    bot_info = await bot.get_me()
 
     if chat.type not in [ChatType.PRIVATE]:
-        btn = BuildKeyboard.ubutton([{"Start me in PM": create_deep_linked_url(context.bot.username, "start")}])
-        await effective_message.reply_text(f"Hey, {user.first_name}\nStart me in PM!", reply_markup=btn)
+        btn = BuildKeyboard.ubutton([{"Start me in PM": f"http://t.me/{bot_info.username}?start=start"}])
+        await message.reply_text(f"Hey, {user.first_name}\nStart me in PM!", reply_markup=btn)
         return
     
     # database entry checking if user is registered.
@@ -26,13 +27,13 @@ async def func_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if show_bot_pic:
         try:
-            bot_photos = await context.bot.get_user_profile_photos(context.bot.id)
-            photo_file_id = bot_photos.photos[0][-1].file_id # the high quality photo file_id
+            async for photo in bot.get_chat_photos("me", 1):
+                photo_file_id = photo.file_id # the high quality photo file_id
         except:
             pass
 
     text = (
-        f"Hey, {user.first_name}! I'm {context.bot.first_name}!\n\n"
+        f"Hey, {user.first_name}! I'm {bot_info.first_name}!\n\n"
         "I can help you to manage your chat with a lots of useful features!\n"
         "Feel free to add me to your chat.\n\n"
         "• /help - Get bot help menu\n\n"
@@ -41,10 +42,10 @@ async def func_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "<b>• Developer:</b> <a href='https://t.me/bishalqx680/22'>bishalqx980</a>"
     )
 
-    if context.bot.id != ORIGINAL_BOT_ID:
+    if bot_info.id != ORIGINAL_BOT_ID:
         text += f"\n\n<blockquote>Cloned bot of @{ORIGINAL_BOT_USERNAME}</blockquote>"
 
-    btn_data = {"Add me to your chat": create_deep_linked_url(context.bot.username, "help", True)}
+    btn_data = {"Add me to your chat": f"http://t.me/{bot_info.username}?startgroup=help"}
     if support_chat:
         btn_data.update({"Support Chat": support_chat})
     
@@ -52,7 +53,7 @@ async def func_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if photo_file_id:
         try:
-            await effective_message.reply_photo(photo_file_id, text, reply_markup=btn)
+            await message.reply_photo(photo_file_id, caption=text, reply_markup=btn)
             return
         except BadRequest:
             pass
@@ -60,4 +61,4 @@ async def func_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error(e)
     
     # if BadRequest or No Photo or Other error
-    await effective_message.reply_text(text, reply_markup=btn)
+    await message.reply_text(text, reply_markup=btn)

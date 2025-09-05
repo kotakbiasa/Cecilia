@@ -1,20 +1,19 @@
 import asyncio
 from functools import wraps
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ChatType
+from pyrogram.types import Message
+from pyrogram.enums import ChatType
+from app import bot
 
 def pm_only(func):
     @wraps(func)
-    async def wraper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """:param chat_id: where you want to send this *pm_error* message"""
-        chat = update.effective_chat
+    async def wraper(_, message: Message):
+        chat = message.chat
 
         if chat.type not in [ChatType.PRIVATE]:
-            sent_message = await update.effective_message.reply_text(f"This command is made to be used in pm, not in public chat!")
+            sent_message = await message.reply_text("This command is made to be used in pm, not in public chat!")
             await asyncio.sleep(3)
-            await chat.delete_messages([update.effective_message.id, sent_message.id])
+            await bot.delete_messages(chat.id, [message.id, sent_message.id])
             return
         
-        return await func(update, context)
+        return await func(_, message)
     return wraper

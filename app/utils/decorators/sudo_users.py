@@ -1,6 +1,5 @@
 from functools import wraps
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram.types import Message
 from app import config
 from app.utils.database import MemoryDB
 
@@ -9,8 +8,8 @@ def require_sudo(func):
     :returns list: list of sudo's including **owner_id**
     """
     @wraps(func)
-    async def wraper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        user = update.effective_user
+    async def wraper(_, message: Message):
+        user = message.from_user
         owner_id = config.owner_id
         sudo_users = MemoryDB.bot_data.get("sudo_users") or []
 
@@ -18,8 +17,8 @@ def require_sudo(func):
             sudo_users.append(owner_id)
         
         if user.id not in sudo_users:
-            await update.effective_message.reply_text("Access denied!")
+            await message.reply_text("Access denied!")
             return
         
-        return await func(update, context)
+        return await func(_, message)
     return wraper

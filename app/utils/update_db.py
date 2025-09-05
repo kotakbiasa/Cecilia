@@ -1,4 +1,4 @@
-from app import CONFIG_FILE, logger, config
+from app import logger, config
 from .database import DBConstants, MemoryDB, MongoDB
 
 def update_database():
@@ -26,6 +26,6 @@ def update_database():
     try:
         MongoDB.insert(DBConstants.BOT_DATA, config_data)
         MemoryDB.insert(DBConstants.BOT_DATA, None, config_data)
-        logger.info(f"Database has been updated from `{CONFIG_FILE}` file.")
+        logger.info("Database has been updated from local config file.")
     except Exception as e:
         logger.warning(e)

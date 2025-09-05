@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from app import logger
 
 class KeyboardBuilder:
@@ -15,7 +15,7 @@ class KeyboardBuilder:
         try:
             self.keyboard.clear()
             for keyboard_data in data:
-                button = [InlineKeyboardButton(btn_name, btn_url) for btn_name, btn_url in keyboard_data.items()]
+                button = [InlineKeyboardButton(btn_name, url=btn_url) for btn_name, btn_url in keyboard_data.items()]
                 self.keyboard.append(button)
 
             return InlineKeyboardMarkup(self.keyboard)
@@ -45,7 +45,7 @@ class KeyboardBuilder:
                         btn_url = btn_data if btn_data.startswith("http") else None
                         callback_data = btn_data if not btn_url else None
                     
-                    row.append(InlineKeyboardButton(btn_name, btn_url, callback_data, switch_inline_query_current_chat=switch_to_inline))
+                    row.append(InlineKeyboardButton(btn_name, callback_data, btn_url, switch_inline_query_current_chat=switch_to_inline))
                 
                 self.keyboard.append(row)
 
