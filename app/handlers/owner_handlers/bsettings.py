@@ -12,15 +12,15 @@ from app.utils.decorators.pm_only import pm_only
 
 class BotSettingsData:
     TEXT = (
-        "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-        "• Show Bot Photo: <code>{}</code>\n"
-        "• Images: <code>{}</code>\n"
-        "• Support chat: <code>{}</code>\n"
-        "• Server url: <code>{}</code>\n"
-        "• Sudo: <code>{}</code>\n"
-        "• Shrinkme API: <code>{}</code>\n"
-        "• OMDB API: <code>{}</code>\n"
-        "• Weather API: <code>{}</code>"
+        "<blockquote>**Bot Settings**</blockquote>\n\n"
+        "• Show Bot Photo: `{}`\n"
+        "• Images: `{}`\n"
+        "• Support chat: `{}`\n"
+        "• Server url: `{}`\n"
+        "• Sudo: `{}`\n"
+        "• Shrinkme API: `{}`\n"
+        "• OMDB API: `{}`\n"
+        "• Weather API: `{}`"
     )
 
     BUTTONS = [
@@ -33,9 +33,9 @@ class BotSettingsData:
 
 @pm_only
 @require_sudo
-async def func_bsettings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    message = update.effective_message
+async def func_bsettings(_, message: Message):
+    user = message.from_user
+    message = update.message
     
     # requied data needed for editing
     data = {
@@ -72,7 +72,7 @@ async def func_bsettings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         photo = random.choice(images).strip()
     elif show_bot_pic:
         try:
-            bot_photos = await context.bot.get_user_profile_photos(context.bot.id)
+            bot_photos = await bot.get_user_profile_photos(bot.me.id)
             photo_file_id = bot_photos.photos[0][-1].file_id # the high quality photo file_id
         except:
             pass

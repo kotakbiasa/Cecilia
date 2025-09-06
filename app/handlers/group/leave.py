@@ -7,25 +7,25 @@ from app.helpers import BuildKeyboard
 from .auxiliary.anonymous_admin import anonymousAdmin
 
 @pm_error
-async def func_leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
-    effective_message = update.effective_message
+async def func_leave(_, message: Message):
+    chat = message.chat
+    user = message.from_user
+    message = update.message
     
     if user.is_bot:
-        user = await anonymousAdmin(chat, effective_message)
+        user = await anonymousAdmin(chat, message)
         if not user:
             return
     
     try:
         user_status = await chat.get_member(user.id)
     except Exception as e:
-        await effective_message.reply_text(str(e))
+        await message.reply_text(str(e))
         return
 
     if user_status.status not in [ChatMemberStatus.OWNER]:
-        await effective_message.reply_text("Huh, you aren't the owner of this chat!")
+        await message.reply_text("Huh, you aren't the owner of this chat!")
         return
     
     btn = BuildKeyboard.cbutton([{"Leave": f"admin_leavechat_{user.id}", "Stay": "misc_close"}])
-    await effective_message.reply_text("Should I leave?", reply_markup=btn)
+    await message.reply_text("Should I leave?", reply_markup=btn)

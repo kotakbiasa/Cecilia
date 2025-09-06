@@ -5,6 +5,6 @@ from app.utils.decorators.pm_only import pm_only
 
 @pm_only
 @require_sudo
-async def func_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+async def func_log(_, message: Message):
+    message = update.message
     await message.reply_document(open("sys/log.txt", "rb"), filename="log.txt")

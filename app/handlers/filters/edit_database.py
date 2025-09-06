@@ -5,7 +5,7 @@ def edit_database(chat_id, user_id, message):
     Gets `update_data_value` from Edit Value query action & retuns `True` if is_editing.\n
     :param chat_id: update.effective_chat.id
     :param user_id: update.effective_user.id
-    :param message: update.effective_message (Message Property)
+    :param message: update.message (Message Property)
     """
     data_center = MemoryDB.data_center.get(chat_id)
     if data_center and data_center.get("is_editing"):

@@ -1,12 +1,14 @@
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import MessageOriginType
+from pyrogram import filters
+from pyrogram.types import Message
+from pyrogram.enums import MessageOriginType
+
+from app import bot
 from app.helpers import BuildKeyboard
 
-async def func_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    effective_message = update.effective_message
-    re_msg = effective_message.reply_to_message
+@bot.on_message(filters.command("info", ["/", "!", "-", "."]))
+async def func_info(_, message: Message):
+    user = message.from_user
+    re_msg = message.reply_to_message
     victim = user
 
     if re_msg:
@@ -20,29 +22,28 @@ async def func_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
             victim = from_user
         
         if not victim:
-            await effective_message.reply_text(f"<b>• Full name:</b> <code>{forward_origin.sender_user_name}</code>\n<i>Replied user account is hidden!</i>")
+            await message.reply_text(f"**• Full name:** `{forward_origin.sender_user_name}`\n<i>Replied user account is hidden!</i>")
             return
     
-    victim_photos = await victim.get_profile_photos()
     victim_pfp = None
-    if victim_photos.photos:
-        victim_pfp = victim_photos.photos[0][-1].file_id # returns victims latest and best quality pfp file id
+    async for photo in bot.get_chat_photos(victim.id, 1):
+        victim_pfp = photo.file_id # the high quality photo file_id
     
     text = (
-        f"<b>• Full name:</b> <code>{victim.full_name}</code>\n"
-        f"<b>  » First name:</b> <code>{victim.first_name}</code>\n"
-        f"<b>  » Last name:</b> <code>{victim.last_name}</code>\n"
-        f"<b>• Mention:</b> {victim.mention_html()}\n"
-        f"<b>• Username:</b> {victim.name if victim.username else ''}\n"
-        f"<b>• ID:</b> <code>{victim.id}</code>\n"
-        f"<b>• Lang:</b> <code>{victim.language_code}</code>\n"
-        f"<b>• Is bot:</b> <code>{'Yes' if victim.is_bot else 'No'}</code>\n"
-        f"<b>• Is premium:</b> <code>{'Yes' if victim.is_premium else 'No'}</code>"
+        f"**• Full name:** `{victim.full_name}`\n"
+        f"**  » First name:** `{victim.first_name}`\n"
+        f"**  » Last name:** `{victim.last_name}`\n"
+        f"**• Mention:** {victim.mention.HTML}\n"
+        f"**• Username:** {victim.name if victim.username else ''}\n"
+        f"**• ID:** `{victim.id}`\n"
+        f"**• Lang:** `{victim.language_code}`\n"
+        f"**• Is bot:** `{'Yes' if victim.is_bot else 'No'}`\n"
+        f"**• Is premium:** `{'Yes' if victim.is_premium else 'No'}`"
     )
 
     btn = BuildKeyboard.ubutton([{"User Profile": f"tg://user?id={victim.id}"}]) if victim.username else None
 
     if victim_pfp:
-        await effective_message.reply_photo(victim_pfp, text, reply_markup=btn)
+        await message.reply_photo(victim_pfp, text, reply_markup=btn)
     else:
-        await effective_message.reply_text(text, reply_markup=btn)
+        await message.reply_text(text, reply_markup=btn)

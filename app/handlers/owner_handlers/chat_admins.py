@@ -5,16 +5,16 @@ from app.utils.decorators.pm_only import pm_only
 
 @pm_only
 @require_sudo
-async def func_cadmins(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
-    chat_id = " ".join(context.args)
+async def func_cadmins(_, message: Message):
+    message = update.message
+    chat_id = extract_cmd_args(message.text, message.command)
     
     if not chat_id:
-        await message.reply_text("<code>/cadmins ChatID</code> to get specified chat admin list.\n<i>Note: only works if this bot is in that chat!</i>")
+        await message.reply_text("`/cadmins ChatID` to get specified chat admin list.\n<i>Note: only works if this bot is in that chat!</i>")
         return
     
     sent_message = await message.reply_text("Please wait...")
-    owner_storage = "<b>Owner:</b>\n"
+    owner_storage = "**Owner:**\n"
     admins_storage = ""
 
     try:
@@ -25,7 +25,7 @@ async def func_cadmins(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     for admin in admins:
         custom_title = admin.custom_title if admin.custom_title else ""
-        formatted_msg = f"• {admin.user.mention_html()} - <i>{custom_title}</i>\n"
+        formatted_msg = f"• {admin.user.mention.HTML} - <i>{custom_title}</i>\n"
 
         if admin.status == "creator":
             owner_storage += formatted_msg
@@ -33,10 +33,10 @@ async def func_cadmins(update: Update, context: ContextTypes.DEFAULT_TYPE):
             admins_storage += formatted_msg
         
     if admins_storage:
-        admins_storage = f"\n<b>Admin's:</b>\n{admins_storage}"
+        admins_storage = f"\n**Admin's:**\n{admins_storage}"
     
     text = (
-        f"Admins of <code>{chat_id}</code>\n\n"
+        f"Admins of `{chat_id}`\n\n"
         f"{owner_storage}{admins_storage}"
     )
 

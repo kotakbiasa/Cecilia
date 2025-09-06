@@ -11,20 +11,20 @@ from app.utils.decorators.pm_only import pm_only
 
 @pm_only
 @require_sudo
-async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
-    victim_id = " ".join(context.args)
+async def func_database(_, message: Message):
+    message = update.message
+    victim_id = extract_cmd_args(message.text, message.command)
     
     if not victim_id:
         database_info = MongoDB.info()
-        msg_storage = "<blockquote><b>Database information</b></blockquote>\n\n"
+        msg_storage = "<blockquote>**Database information**</blockquote>\n\n"
         for info in database_info:
             info = database_info[info]
             msg_storage += (
-                f"<b>• Document:</b> <i>{info.get('name')}</i>\n"
-                f"<b>• Quantity:</b> <code>{info.get('quantity')}</code>\n"
-                f"<b>• Size:</b> <code>{info.get('size')}</code>\n"
-                f"<b>• A. size:</b> <code>{info.get('acsize')}</code>\n\n"
+                f"**• Document:** <i>{info.get('name')}</i>\n"
+                f"**• Quantity:** `{info.get('quantity')}`\n"
+                f"**• Size:** `{info.get('size')}`\n"
+                f"**• A. size:** `{info.get('acsize')}`\n\n"
             )
         
         active_status = MongoDB.find(DBConstants.USERS_DATA, "active_status")
@@ -33,9 +33,9 @@ async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         text = (
             f"{msg_storage}" # already has 2 escapes
-            f"<b>• Active users:</b> <code>{active_users}</code>\n"
-            f"<b>• Inactive users:</b> <code>{inactive_users}</code>\n\n"
-            f"<blockquote><b>Note:</b> <code>/database ChatID</code> to get specific chat database information.</blockquote>"
+            f"**• Active users:** `{active_users}`\n"
+            f"**• Inactive users:** `{inactive_users}`\n\n"
+            f"<blockquote>**Note:** `/database ChatID` to get specific chat database information.</blockquote>"
         )
 
         await message.reply_text(text)
@@ -64,21 +64,21 @@ async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_invite_link = victim_info.invite_link if victim_info else None
 
         text = (
-            "<blockquote><b>Database information</b></blockquote>\n\n"
+            "<blockquote>**Database information**</blockquote>\n\n"
 
             f"• Title: {chat_title}\n"
-            f"• ID: <code>{victim_id}</code>\n\n"
+            f"• ID: `{victim_id}`\n\n"
 
-            f"• Language: <code>{chat_data.get('lang')}</code>\n"
-            f"• Auto translate: <code>{chat_data.get('auto_tr') or False}</code>\n"
-            f"• Echo: <code>{chat_data.get('echo') or False}</code>\n"
-            f"• Antibot: <code>{chat_data.get('antibot') or False}</code>\n"
-            f"• Welcome Members: <code>{chat_data.get('welcome_user') or False}</code>\n"
-            f"• Farewell Members: <code>{chat_data.get('farewell_user') or False}</code>\n"
-            f"• Join Request: <code>{chat_data.get('chat_join_req')}</code>\n"
-            f"• Service Messages: <code>{chat_data.get('service_messages')}</code>\n"
-            f"• Links Behave: <code>{chat_data.get('links_behave')}</code>\n"
-            f"• Allowed Links: <code>{', '.join(chat_data.get('allowed_links') or [])}</code>"
+            f"• Language: `{chat_data.get('lang')}`\n"
+            f"• Auto translate: `{chat_data.get('auto_tr') or False}`\n"
+            f"• Echo: `{chat_data.get('echo') or False}`\n"
+            f"• Antibot: `{chat_data.get('antibot') or False}`\n"
+            f"• Welcome Members: `{chat_data.get('welcome_user') or False}`\n"
+            f"• Farewell Members: `{chat_data.get('farewell_user') or False}`\n"
+            f"• Join Request: `{chat_data.get('chat_join_req')}`\n"
+            f"• Service Messages: `{chat_data.get('service_messages')}`\n"
+            f"• Links Behave: `{chat_data.get('links_behave')}`\n"
+            f"• Allowed Links: `{', '.join(chat_data.get('allowed_links') or [])}`"
         )
 
         btn = BuildKeyboard.ubutton([{"Invite Link": chat_invite_link}]) if chat_invite_link else None
@@ -86,7 +86,7 @@ async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
         custom_welcome_msg = chat_data.get('custom_welcome_msg')
         if custom_welcome_msg:
             text += (
-                "\n\n<blockquote><b>Custom Welcome message</b></blockquote>\n\n"
+                "\n\n<blockquote>**Custom Welcome message**</blockquote>\n\n"
                 f"<blockquote>{custom_welcome_msg}</blockquote>"
             )
         
@@ -95,7 +95,7 @@ async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
             filters_file = BytesIO(json.dumps(chat_filters, indent=4).encode())
             filters_file.name = f"filters_{victim_id}.json"
 
-            await message.reply_document(filters_file, f"ChatID: <code>{victim_id}</code>")
+            await message.reply_document(filters_file, f"ChatID: `{victim_id}`")
     
     else:
         user_data = MongoDB.find_one(DBConstants.USERS_DATA, "user_id", victim_id) # victim_id as int
@@ -110,23 +110,23 @@ async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
             btn = None
         
         try:
-            victim_name = victim_info.mention_html() if victim_info else user_data.get('mention')
+            victim_name = victim_info.mention.HTML if victim_info else user_data.get('mention')
         except: # TypeError
             victim_name = user_data.get('mention')
         
         victim_username = victim_info.username if victim_info else user_data.get('username')
-        text = "<blockquote><b>Database information</b></blockquote>\n\n"
+        text = "<blockquote>**Database information**</blockquote>\n\n"
 
         text += (
             f"• Name: {victim_name}\n"
-            f"• ID: <code>{victim_id}</code>\n"
+            f"• ID: `{victim_id}`\n"
             f"• Username: @{victim_username or 'username'}\n\n"
 
-            f"• Language: <code>{user_data.get('lang')}</code>\n"
-            f"• Auto translate: <code>{user_data.get('auto_tr') or False}</code>\n"
-            f"• Echo: <code>{user_data.get('echo') or False}</code>\n\n"
+            f"• Language: `{user_data.get('lang')}`\n"
+            f"• Auto translate: `{user_data.get('auto_tr') or False}`\n"
+            f"• Echo: `{user_data.get('echo') or False}`\n\n"
 
-            f"• Active status: <code>{user_data.get('active_status')}</code>"
+            f"• Active status: `{user_data.get('active_status')}`"
         )
 
         if victim_info:

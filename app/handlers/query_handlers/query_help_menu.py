@@ -9,8 +9,8 @@ from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MongoDB
 from ..core.help import HelpMenuData
 
-async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
+async def query_help_menu(_, message: Message):
+    user = message.from_user
     query = update.callback_query
 
     # refined query data
@@ -22,7 +22,7 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     elif query_data == "gm1":
         text = (
-            "<blockquote><b>Group Management</b></blockquote>\n\n"
+            "<blockquote>**Group Management**</blockquote>\n\n"
 
             "• /id » Show chat/user id\n"
             "• /invite » Generate chat invite link\n"
@@ -38,8 +38,8 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• /mute » Restrict a member (member will be unable to send messages etc.)\n"
             "• /unmute » Unrestrict a restricted member\n\n"
 
-            "<blockquote><b>Note:</b> Send command to get more details about the command functions!\n"
-            "Some command has a silent & delete function! eg. <code>/s[command]</code> & <code>/d[command]</code> » /sban or /dban etc.</blockquote>"
+            "<blockquote>**Note:** Send command to get more details about the command functions!\n"
+            "Some command has a silent & delete function! eg. `/s[command]` & `/d[command]` » /sban or /dban etc.</blockquote>"
         )
 
         btn_data = [
@@ -51,12 +51,12 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     elif query_data == "gm2":
         text = (
-            "<blockquote><b>Group Management</b></blockquote>\n\n"
+            "<blockquote>**Group Management**</blockquote>\n\n"
 
             "• /warn » Give warning to member (automatic action will be taken by bot if member gets 3 warns)\n"
             "• /warns » See your warnings in current chat\n"
             "• /purge » Delete all messages between replied to current message!\n"
-            "• /purgefrom | /purgeto » Delete all messages between <code>purgefrom</code> and <code>purgeto</code>.\n"
+            "• /purgefrom | /purgeto » Delete all messages between `purgefrom` and `purgeto`.\n"
             "• /lock » Lock the chat (member will be unable to send messages etc.)\n"
             "• /unlock » Unlock the chat (back to normal)\n"
             "• /adminlist » Get chat admins list.\n"
@@ -64,8 +64,8 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• /leave » bot will leave the chat.\n"
             "• /settings » Settings of chat\n\n"
 
-            "<blockquote><b>Note:</b> Send command to get more details about the command functions!\n"
-            "Some command has a silent & delete function! eg. <code>/s[command]</code> & <code>/d[command]</code> » /sban or /dban etc.</blockquote>"
+            "<blockquote>**Note:** Send command to get more details about the command functions!\n"
+            "Some command has a silent & delete function! eg. `/s[command]` & `/d[command]` » /sban or /dban etc.</blockquote>"
         )
 
         btn_data = [
@@ -77,19 +77,19 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     elif query_data == "ai_knowledge":
         text = (
-            "<blockquote><b>AI/LLM Functions</b></blockquote>\n\n"
+            "<blockquote>**AI/LLM Functions**</blockquote>\n\n"
             
             "• /imagine » Generate AI image.\n"
             "• /gpt » Ask any question to AI-LLM\n\n"
 
-            "<blockquote><b>Note:</b> Send command to get more details about the command functions!</blockquote>"
+            "<blockquote>**Note:** Send command to get more details about the command functions!</blockquote>"
         )
 
         btn = BuildKeyboard.cbutton([{"Back": "help_menu_menu", "Close": "misc_close"}])
     
     elif query_data == "misc":
         text = (
-            "<blockquote><b>Misc Functions</b></blockquote>\n\n"
+            "<blockquote>**Misc Functions**</blockquote>\n\n"
 
             "• /movie » Get Movie info by name or IMDB ID\n"
             "• /tr » Google translator\n"
@@ -99,7 +99,7 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• /ping » Get response of website\n"
             "• /calc » Normal calculator (supported syntex: +, -, *, /)\n"
             "• /tts » Convert text into speech (voice)\n"
-            "• /unzip » Unzip any <code>.zip</code> file\n"
+            "• /unzip » Unzip any `.zip` file\n"
             "• /weather » Get current weather info\n"
             "• /genqr » Generate QR code (image)\n"
             "• /decqr » Decode QR code (image)\n"
@@ -110,17 +110,17 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• /id » Show chat/user id\n"
             "• /info » Show user info\n"
             "• /psndl » Get playstation (psn/.pkg) games/updates/dlc link (mostly ps3)\n"
-            "• /rap » Generate .rap file <code>hex_code</code> (LICENSE file for PSN file, /psndl to get hex code)\n"
+            "• /rap » Generate .rap file `hex_code` (LICENSE file for PSN file, /psndl to get hex code)\n"
             "• /settings » Settings of chat\n\n"
 
-            "<blockquote><b>Note:</b> Send command to get more details about the command functions!</blockquote>"
+            "<blockquote>**Note:** Send command to get more details about the command functions!</blockquote>"
         )
         
         btn = BuildKeyboard.cbutton([{"Back": "help_menu_menu", "Close": "misc_close"}])
     
     elif query_data == "owner":
         text = (
-            "<blockquote><b>Owner/Sudo Functions</b></blockquote>\n\n"
+            "<blockquote>**Owner/Sudo Functions**</blockquote>\n\n"
 
             "• /say » Send message as bot\n"
             "• /broadcast » Broadcast message to all active users\n"
@@ -133,7 +133,7 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• /log » Get log file (for error handling)\n"
             "• /sys » Get system info\n\n"
 
-            "<blockquote><b>Note:</b> Send command to get more details about the command functions!</blockquote>"
+            "<blockquote>**Note:** Send command to get more details about the command functions!</blockquote>"
         )
         
         btn = BuildKeyboard.cbutton([{"Back": "help_menu_menu", "Close": "misc_close"}])
@@ -166,20 +166,20 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         bot_minute = remainder / 60
 
         text = (
-            "<blockquote><code><b>» bot.info()</b></code></blockquote>\n\n"
+            "<blockquote>`**» bot.info()**`</blockquote>\n\n"
 
-            f"<b>• Name:</b> {context.bot.first_name}\n"
-            f"<b>• ID:</b> <code>{context.bot.id}</code>\n"
-            f"<b>• Username:</b> {context.bot.name}\n\n"
+            f"**• Name:** {context.bot.first_name}\n"
+            f"**• ID:** `{context.bot.id}`\n"
+            f"**• Username:** {context.bot.name}\n\n"
 
-            f"<b>• Registered users:</b> <code>{t_users_count}</code>\n"
-            f"<b>• Active users:</b> <code>{active_users}</code>\n"
-            f"<b>• Inactive users:</b> <code>{inactive_users}</code>\n"
-            f"<b>• Total chats:</b> <code>{t_chats_count}</code>\n\n"
+            f"**• Registered users:** `{t_users_count}`\n"
+            f"**• Active users:** `{active_users}`\n"
+            f"**• Inactive users:** `{inactive_users}`\n"
+            f"**• Total chats:** `{t_chats_count}`\n\n"
 
-            f"<b>• System uptime:</b> <code>{int(sys_days)}d {int(sys_hours)}h {int(sys_minute)}m</code>\n"
-            f"<b>• Bot uptime:</b> <code>{int(bot_days)}d {int(bot_hours)}h {int(bot_minute)}m</code>\n"
-            f"<b>• Version (stable):</b> <code>{__version__}</code>"
+            f"**• System uptime:** `{int(sys_days)}d {int(sys_hours)}h {int(sys_minute)}m`\n"
+            f"**• Bot uptime:** `{int(bot_days)}d {int(bot_hours)}h {int(bot_minute)}m`\n"
+            f"**• Version (stable):** `{__version__}`"
         )
 
         btn_data = [

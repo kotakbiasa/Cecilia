@@ -1,13 +1,16 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
+
+from app import bot
+from app.helpers.args_extractor import extract_cmd_args
 from app.modules.psndl_module import PSNDL
 
-async def func_rap(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    effective_message = update.effective_message
-    hex_data = " ".join(context.args)
+@bot.on_message(filters.command("rap", ["/", "!", "-", "."]))
+async def func_rap(_, message: Message):
+    hex_data = extract_cmd_args(message.txt, message.command)
 
     if not hex_data:
-        await effective_message.reply_text("Use <code>/rap rapData (hex)</code>\nE.g. <code>/rap D78710F4C0979FAD9CDB40C612C94F60</code>\n<blockquote><b>Note:</b> You will get the rap data after searching package using /psndl command.</blockquote>")
+        await message.reply_text(f"Use `/{message.command[0]} rapData (hex)`\nE.g. `/{message.command[0]} D78710F4C0979FAD9CDB40C612C94F60`\n<blockquote>**Note:** You will get the rap data after searching package using /psndl command.</blockquote>")
         return
 
     result = await PSNDL.gen_rap(hex_data)
@@ -18,14 +21,14 @@ async def func_rap(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
 
     if type(result) is not dict and result in response:
-        await effective_message.reply_text(response[result])
+        await message.reply_text(response[result])
         return
 
     caption = (
-        f"<b>• ID:</b> <code>{result['packageData'].get('id')}</code>\n"
-        f"<b>• Name:</b> <code>{result['packageData'].get('name')}</code>\n"
-        f"<b>• Type:</b> <code>{result['packageData'].get('type')}</code>\n"
-        f"<b>• Region:</b> <code>{result['packageData'].get('region')}</code>\n"
+        f"**• ID:** `{result['packageData'].get('id')}`\n"
+        f"**• Name:** `{result['packageData'].get('name')}`\n"
+        f"**• Type:** `{result['packageData'].get('type')}`\n"
+        f"**• Region:** `{result['packageData'].get('region')}`\n"
     )
 
-    await effective_message.reply_document(result["rapBytes"], caption)
+    await message.reply_document(result["rapBytes"], caption)

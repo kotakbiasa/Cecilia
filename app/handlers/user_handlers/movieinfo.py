@@ -1,17 +1,20 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
+
+from app import bot
+from app.helpers.args_extractor import extract_cmd_args
 from app.modules.omdb_info import fetch_movieinfo
 
-async def func_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    effective_message = update.effective_message
-    movie_name = " ".join(context.args)
+@bot.on_message(filters.command("movie", ["/", "!", "-", "."]))
+async def func_movie(_, message: Message):
+    movie_name = extract_cmd_args(message.text, message.command)
 
     if not movie_name:
-        await effective_message.reply_text("Use <code>/movie movie name</code>\nE.g. <code>/movie animal</code>\nor\n<code>/movie -i tt13751694</code> [IMDB ID]\nor\n<code>/movie bodyguard -y 2011</code>")
+        await message.reply_text(f"Use `/{message.command[0]} movie name`\nE.g. `/{message.command[0]} animal`\nor\n`/{message.command[0]} -i tt13751694` [IMDB ID]\nor\n`/{message.command[0]} bodyguard -y 2011`")
         return
     
     if "-i" in movie_name and "-y" in movie_name:
-        await effective_message.reply_text("⚠ You can't use both statement at once!\n/movie for details.")
+        await message.reply_text(f"⚠ You can't use both statement at once!\n/{message.command[0]} for details.")
         return
     
     imdb_id = None
@@ -28,38 +31,38 @@ async def func_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     movie_info = await fetch_movieinfo(movie_name=movie_name, imdb_id=imdb_id, year=year)
     if not movie_info:
-        await effective_message.reply_text("Oops! Something went wrong!")
+        await message.reply_text("Oops! Something went wrong!")
         return
     elif movie_info["Response"] == "False":
-        await effective_message.reply_text("Invalid movie name!")
+        await message.reply_text("Invalid movie name!")
         return
     
     runtime = movie_info["Runtime"]
     runtime = f"{int(runtime[0:3]) // 60} Hour {int(runtime[0:3]) % 60} Min" if runtime != "N/A" else "N/A"
 
     text = (
-        f"<b><a href='https://www.imdb.com/title/{movie_info.get('imdbID')}'>{movie_info.get('Title')} | {movie_info.get('imdbID')}</a></b>\n\n"
-        f"<b>🎥 Content Type:</b> {movie_info.get('Type')}\n"
-        f"<b>📄 Title:</b> {movie_info.get('Title')}\n"
-        f"<b>👁‍🗨 Released:</b> {movie_info.get('Released')}\n"
-        f"<b>🕐 Time:</b> {runtime}\n"
-        f"<b>🎨 Genre:</b> {movie_info.get('Genre')}\n"
-        f"<b>🤵‍♂️ Director:</b> {movie_info.get('Director')}\n"
-        f"<b>🧑‍💻 Writer:</b> {movie_info.get('Writer')}\n"
-        f"<b>👫 Actors:</b> {movie_info.get('Actors')}\n"
-        f"<b>🗣 Language:</b> {movie_info.get('Language')}\n"
-        f"<b>🌐 Country:</b> {movie_info.get('Country')}\n"
-        f"<b>🏆 Awards:</b> {movie_info.get('Awards')}\n"
-        f"<b>🎯 Meta Score:</b> {movie_info.get('Metascore')}\n"
-        f"<b>🎯 IMDB Rating:</b> {movie_info.get('imdbRating')}\n"
-        f"<b>📊 IMDB Votes:</b> {movie_info.get('imdbVotes')}\n"
-        f"<b>🏷 IMDB ID:</b> <code>{movie_info.get('imdbID')}</code>\n"
-        f"<b>💰 BoxOffice:</b> {movie_info.get('BoxOffice')}\n\n"
-        f"<blockquote expandable><b>📝 Plot:</b> {movie_info.get('Plot')}</blockquote>"
+        f"**<a href='https://www.imdb.com/title/{movie_info.get('imdbID')}'>{movie_info.get('Title')} | {movie_info.get('imdbID')}</a>**\n\n"
+        f"**🎥 Content Type:** {movie_info.get('Type')}\n"
+        f"**📄 Title:** {movie_info.get('Title')}\n"
+        f"**👁‍🗨 Released:** {movie_info.get('Released')}\n"
+        f"**🕐 Time:** {runtime}\n"
+        f"**🎨 Genre:** {movie_info.get('Genre')}\n"
+        f"**🤵‍♂️ Director:** {movie_info.get('Director')}\n"
+        f"**🧑‍💻 Writer:** {movie_info.get('Writer')}\n"
+        f"**👫 Actors:** {movie_info.get('Actors')}\n"
+        f"**🗣 Language:** {movie_info.get('Language')}\n"
+        f"**🌐 Country:** {movie_info.get('Country')}\n"
+        f"**🏆 Awards:** {movie_info.get('Awards')}\n"
+        f"**🎯 Meta Score:** {movie_info.get('Metascore')}\n"
+        f"**🎯 IMDB Rating:** {movie_info.get('imdbRating')}\n"
+        f"**📊 IMDB Votes:** {movie_info.get('imdbVotes')}\n"
+        f"**🏷 IMDB ID:** `{movie_info.get('imdbID')}`\n"
+        f"**💰 BoxOffice:** {movie_info.get('BoxOffice')}\n\n"
+        f"<blockquote expandable>**📝 Plot:** {movie_info.get('Plot')}</blockquote>"
     )
 
     photo = movie_info["Poster"]
     if photo:
-        await effective_message.reply_photo(photo, text)
+        await message.reply_photo(photo, text)
     else:
-        await effective_message.reply_text(text)
+        await message.reply_text(text)

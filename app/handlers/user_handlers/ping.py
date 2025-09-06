@@ -1,21 +1,24 @@
 import aiohttp
 from time import time
-from telegram import Update
-from telegram.ext import ContextTypes
 
-async def func_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    effective_message = update.effective_message
-    url = " ".join(context.args)
+from pyrogram import filters
+from pyrogram.types import Message
+
+from app import bot
+from app.helpers.args_extractor import extract_cmd_args
+
+@bot.on_message(filters.command("ping", ["/", "!", "-", "."]))
+async def func_ping(_, message: Message):
+    url = extract_cmd_args(message.text, message.command)
 
     if not url:
-        await effective_message.reply_text("Use <code>/ping url</code>\nE.g. <code>/ping https://google.com</code>")
+        await message.reply_text(f"Use `/{message.command[0]} url`\nE.g. `/{message.command[0]} https://google.com`")
         return
     
     if url[0:4] != "http":
         url = f"http://{url}"
 
-    sent_message = await effective_message.reply_text(f"Pinging {url}\nPlease wait...")
+    sent_message = await message.reply_text(f"Pinging {url}\nPlease wait...")
     start_time = time()
     try:
         async with aiohttp.ClientSession() as session:
@@ -46,9 +49,9 @@ async def func_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 status = status_codes.get(response.status, "⚠️ Unknown Status")
                 text = (
                     f"Site: {url}\n"
-                    f"R.time: <code>{response_time}</code>\n"
-                    f"R.code: <code>{response.status}</code>\n"
-                    f"Status: <code>{status}</code>"
+                    f"R.time: `{response_time}`\n"
+                    f"R.code: `{response.status}`\n"
+                    f"Status: `{status}`"
                 )
     except aiohttp.ServerTimeoutError:
         text = "Error: Request timeout."
@@ -57,4 +60,4 @@ async def func_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         text = "Oops! Something went wrong!"
     
-    await sent_message.edit_text(f"<b>{text}</b>")
+    await sent_message.edit_text(f"**{text}**")

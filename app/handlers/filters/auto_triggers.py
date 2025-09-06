@@ -2,7 +2,7 @@ from telegram import Message, User, Chat
 
 async def autoTriggers(message: Message, user: User, chat: Chat, filters: dict):
     """
-    :param message: `update.effective_message`
+    :param message: `update.message`
     :param user: `update.effective_user`
     :param chat: `update.effective_chat`
     :param filters: chat filters (from chat database)
@@ -23,7 +23,7 @@ async def autoTriggers(message: Message, user: User, chat: Chat, filters: dict):
                 "{last}": user.last_name or "",
                 "{fullname}": user.full_name,
                 "{username}": user.name,
-                "{mention}": user.mention_html(),
+                "{mention}": user.mention.HTML,
                 "{id}": user.id,
                 "{chatname}": chat.title
             }

@@ -7,19 +7,19 @@ from .auxiliary.chat_admins import ChatAdmins
 from .auxiliary.anonymous_admin import anonymousAdmin
 
 @pm_error
-async def func_purgefrom(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
-    effective_message = update.effective_message
-    re_msg = effective_message.reply_to_message
+async def func_purgefrom(_, message: Message):
+    chat = message.chat
+    user = message.from_user
+    message = update.message
+    re_msg = message.reply_to_message
     
     if user.is_bot:
-        user = await anonymousAdmin(chat, effective_message)
+        user = await anonymousAdmin(chat, message)
         if not user:
             return
     
     if not re_msg:
-        await effective_message.reply_text(
+        await message.reply_text(
             "Reply the message where you want to purge from! Then use /purgeto to start.\n"
             "Note: All messages between purgefrom and purgeto will be deleted!"
         )
@@ -29,23 +29,23 @@ async def func_purgefrom(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await chat_admins.fetch_admins(chat, context.bot.id, user.id)
     
     if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
-        await effective_message.reply_text("You aren't an admin in this chat!")
+        await message.reply_text("You aren't an admin in this chat!")
         return
     
     if chat_admins.is_user_admin and not chat_admins.is_user_admin.can_delete_messages:
-        await effective_message.reply_text("You don't have enough permission to delete chat messages!")
+        await message.reply_text("You don't have enough permission to delete chat messages!")
         return
     
     if not chat_admins.is_bot_admin:
-        await effective_message.reply_text("I'm not an admin in this chat!")
+        await message.reply_text("I'm not an admin in this chat!")
         return
     
     if not chat_admins.is_bot_admin.can_delete_messages:
-        await effective_message.reply_text("I don't have enough permission to delete chat messages!")
+        await message.reply_text("I don't have enough permission to delete chat messages!")
         return
     
-    await effective_message.delete()
-    sent_message = await effective_message.reply_text("Now reply the last message to delete by /purgeto command.")
+    await message.delete()
+    sent_message = await message.reply_text("Now reply the last message to delete by /purgeto command.")
     
     data = {
         "purge_user_id": user.id,
@@ -57,19 +57,19 @@ async def func_purgefrom(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @pm_error
-async def func_purgeto(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
-    effective_message = update.effective_message
-    re_msg = effective_message.reply_to_message
+async def func_purgeto(_, message: Message):
+    chat = message.chat
+    user = message.from_user
+    message = update.message
+    re_msg = message.reply_to_message
     
     if user.is_bot:
-        user = await anonymousAdmin(chat, effective_message)
+        user = await anonymousAdmin(chat, message)
         if not user:
             return
     
     if not re_msg:
-        await effective_message.reply_text(
+        await message.reply_text(
             "Reply the last message to delete.\n"
             "Note: All messages between purgefrom and purgeto will be deleted!"
         )
@@ -77,7 +77,7 @@ async def func_purgeto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     data_center = MemoryDB.data_center.get(chat.id)
     if not data_center:
-        await effective_message.reply_text("Use /purgefrom for details.")
+        await message.reply_text("Use /purgefrom for details.")
         return
     
     purge_user_id = data_center.get("purge_user_id") # for checking is that same user
@@ -85,11 +85,11 @@ async def func_purgeto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sent_message_id = data_center.get("sent_message_id") # for deleting this message
 
     if not purge_message_id:
-        await effective_message.reply_text("Use /purgefrom for details.")
+        await message.reply_text("Use /purgefrom for details.")
         return
     
     if purge_user_id != user.id:
-        await effective_message.reply_text("Task isn't yours!")
+        await message.reply_text("Task isn't yours!")
         return
     
     message_ids = []
@@ -101,7 +101,7 @@ async def func_purgeto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await chat.delete_messages(message_ids)
     except Exception as e:
-        await effective_message.reply_text(str(e))
+        await message.reply_text(str(e))
         return
     
     # cleaning memory
@@ -113,5 +113,5 @@ async def func_purgeto(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     MemoryDB.insert(DBConstants.DATA_CENTER, chat.id, data)
     
-    await effective_message.reply_text("Purge completed!")
-    await effective_message.delete()
+    await message.reply_text("Purge completed!")
+    await message.delete()

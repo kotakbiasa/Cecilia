@@ -10,9 +10,7 @@ def pm_error(func):
         chat = message.chat
 
         if chat.type in [ChatType.PRIVATE]:
-            bot_info = await bot.get_me()
-
-            btn = BuildKeyboard.ubutton([{"Add me to your chat": f"http://t.me/{bot_info.username}?startgroup=help"}])
+            btn = BuildKeyboard.ubutton([{"Add me to your chat": f"http://t.me/{bot.me.username}?startgroup=help"}])
             await message.reply_text("This command is made to be used in group chats, not in pm!", reply_markup=btn)
             return
         

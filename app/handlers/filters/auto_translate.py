@@ -5,7 +5,7 @@ from app.modules.translator import translate
 
 async def autoTranslate(message: Message, user: User, lang_code: str):
     """
-    :param message: `update.effective_message`
+    :param message: `update.message`
     :param user: `update.effective_user`
     :param lang_code: Get from user/chat database
     """
@@ -22,4 +22,4 @@ async def autoTranslate(message: Message, user: User, lang_code: str):
         return
     
     if response.lower() != text.lower():
-        await message.reply_text(f"{user.mention_html()}: {response}")
+        await message.reply_text(f"{user.mention.HTML}: {response}")

@@ -6,21 +6,21 @@ from app.utils.database import DBConstants, database_search
 from .auxiliary.chat_admins import ChatAdmins
 
 @pm_error
-async def func_warns(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
-    effective_message = update.effective_message
+async def func_warns(_, message: Message):
+    chat = message.chat
+    user = message.from_user
+    message = update.message
 
     chat_admins = ChatAdmins()
     await chat_admins.fetch_admins(chat, user_id=user.id)
 
     if chat_admins.is_user_admin or chat_admins.is_user_owner:
-        await effective_message.reply_text("How could someone give you a warning?")
+        await message.reply_text("How could someone give you a warning?")
         return
     
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
-        await effective_message.reply_text("<blockquote><b>Error:</b> Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
+        await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
         return
     
     warns = chat_data.get("warns") or {}
@@ -33,4 +33,4 @@ async def func_warns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         text = f"You have {warn_count}/3 warnings!! Be careful...!"
     
-    await effective_message.reply_text(text)
+    await message.reply_text(text)

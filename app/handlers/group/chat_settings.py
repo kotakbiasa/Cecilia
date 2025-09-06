@@ -1,5 +1,7 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
+
+from app import bot
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MemoryDB, database_search
 from .auxiliary.chat_admins import ChatAdmins
@@ -7,21 +9,21 @@ from .auxiliary.anonymous_admin import anonymousAdmin
 
 class GroupChatSettingsData:
     TEXT = (
-        "<blockquote><b>Chat Settings</b></blockquote>\n\n"
+        "<blockquote>**Chat Settings**</blockquote>\n\n"
 
         "• Title: {}\n"
-        "• ID: <code>{}</code>\n\n"
+        "• ID: `{}`\n\n"
 
-        "• Language: <code>{}</code>\n"
-        "• Auto translate: <code>{}</code>\n"
-        "• Echo: <code>{}</code>\n"
-        "• Antibot: <code>{}</code>\n"
-        "• Welcome Members: <code>{}</code>\n"
-        "• Farewell Members: <code>{}</code>\n"
-        "• Join Request: <code>{}</code>\n"
-        "• Service Messages: <code>{}</code>\n"
-        "• Links Behave: <code>{}</code>\n"
-        "• Allowed Links: <code>{}</code>"
+        "• Language: `{}`\n"
+        "• Auto translate: `{}`\n"
+        "• Echo: `{}`\n"
+        "• Antibot: `{}`\n"
+        "• Welcome Members: `{}`\n"
+        "• Farewell Members: `{}`\n"
+        "• Join Request: `{}`\n"
+        "• Service Messages: `{}`\n"
+        "• Links Behave: `{}`\n"
+        "• Allowed Links: `{}`"
     )
 
     BUTTONS = [
@@ -34,14 +36,14 @@ class GroupChatSettingsData:
     ]
 
 
-async def chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.on_message(filters.command("settings", ["/", "!", "-", "."]) & filters.group)
+async def func_chat_settings(_, message: Message):
     """This function won't be in handler, instead it will be called in func_settings if chat.type isn't private"""
-    chat = update.effective_chat
-    user = update.effective_user
-    effective_message = update.effective_message
+    chat = message.chat
+    user = message.from_user
 
     if user.is_bot:
-        user = await anonymousAdmin(chat, effective_message)
+        user = await anonymousAdmin(chat, message)
         if not user:
             return
     
@@ -49,20 +51,20 @@ async def chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await chat_admins.fetch_admins(chat, context.bot.id, user.id)
     
     if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
-        await effective_message.reply_text("You aren't an admin in this chat!")
+        await message.reply_text("You aren't an admin in this chat!")
         return
     
     if chat_admins.is_user_admin and not chat_admins.is_user_admin.can_change_info:
-        await effective_message.reply_text("You don't have enough permission to manage this chat!")
+        await message.reply_text("You don't have enough permission to manage this chat!")
         return
     
     if not chat_admins.is_bot_admin:
-        await effective_message.reply_text("I'm not an admin in this chat!")
+        await message.reply_text("I'm not an admin in this chat!")
         return
     
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
-        await effective_message.reply_text("<blockquote><b>Error:</b> Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
+        await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
         return
     
     data = {
@@ -91,4 +93,4 @@ async def chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     btn = BuildKeyboard.cbutton(GroupChatSettingsData.BUTTONS)
 
-    await effective_message.reply_text(text, reply_markup=btn)
+    await message.reply_text(text, reply_markup=btn)

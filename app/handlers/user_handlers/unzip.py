@@ -1,64 +1,78 @@
 import os
-from io import BytesIO
+from time import time
 from asyncio import sleep
 
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import FileSizeLimit
+from pyrogram import Client, filters
+from pyrogram.types import Message
 
-from app import logger
-from app.modules.utils import Utils
+from app import bot, logger
+from app.helpers.args_extractor import extract_cmd_args
+from app.helpers.progress_updater import progress_updater
+from app.modules.utils import UTILITY
 
-async def func_unzip(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    effective_message = update.effective_message
-    re_msg = effective_message.reply_to_message
-    password = " ".join(context.args) or None
+@bot.on_message(filters.command(["unzip", "uz"], ["/", "!", "-", "."]))
+async def func_unzip(_: Client, message: Message):
+    re_msg = message.reply_to_message
+    password = extract_cmd_args(message.text, message.command)
 
     if not re_msg or not re_msg.document:
-        await effective_message.reply_text("Reply any <code>.zip</code> file to extract the file. E.g. <code>/unzip password (if needed)</code>")
+        await message.edit_text(f"Reply any `.zip` file to extract the file. E.g. `/{message.command[0]} password (if needed)`")
         return
     
     if not re_msg.document.file_name.endswith(".zip"):
-        await effective_message.reply_text("Replied file isn't a <code>.zip</code> file!")
+        await message.edit_text("Replied file isn't a `.zip` file!")
         return
     
-    file_size = re_msg.document.file_size
-    if file_size >= FileSizeLimit.FILESIZE_DOWNLOAD:
-        await effective_message.reply_text(f"FileSize Error: Replied FileSize {int(file_size / (1024 * 1024))}MB - MaxFileSize Allowed {int(FileSizeLimit.FILESIZE_DOWNLOAD / (1024 * 1024))}MB")
+    await message.edit_text("Please wait...")
+    await message.pin(both_sides=True)
+
+    startTime = time()
+    zipFile = await re_msg.download(re_msg.document.file_name, progress=progress_updater, progress_args=[message, "Downloading...", startTime])
+    if not zipFile:
+        await message.edit_text("Unable to download!")
         return
     
-    sent_message = await effective_message.reply_text("Please wait...")
-
-    # Reading Zip file in memory
-    archive_file = await re_msg.document.get_file()
-    zipFile = BytesIO()
-    await archive_file.download_to_memory(zipFile)
-    zipFile.seek(0)
-
     # Unzipping
-    await sent_message.edit_text("Unziping...")
-    response = Utils.unzipFile(zipFile, password)
+    await message.edit_text("Unziping...")
+    response = UTILITY.unzipFile(zipFile, password)
+
+    # Remove Zip file
+    try:
+        os.remove(zipFile)
+    except Exception as e:
+        logger.error(e)
+    
+    # After Response
     if not isinstance(response, list):
-        await sent_message.edit_text(f"Error: {response}")
+        await message.edit_text(f"Error: {response}")
         return
     
     # File path list
-    counter = 0
-    uploaded = 0
-    uploadfailed = ""
+    counter, uploaded, uploadfailed= 0, 0, ""
+    startTime = time()
     for i in response:
-        counter += 1
         try:
-            percentBar = Utils.createProgressBar(counter * 100/len(response))
-            await sent_message.edit_text((
-                "Uploading...\n"
-                f"File: <code>{i}</code>\n"
-                f"Percent: <code>{percentBar}</code>"
-            ))
-            await effective_message.reply_document(i)
-            uploaded += 1
+            counter += 1
+            is_uploaded = None
+            percent = counter * 100/len(response)
+            
+            text = (
+                f"Uploading...\n"
+                f"**File:** `{i}`\n"
+                f"**Total Percent:** `{UTILITY.createProgressBar(int(percent))}` `{percent:.2f}%`"
+            )
+
+            try:
+                is_uploaded = await message.reply_photo(i, progress=progress_updater, progress_args=[message, text, startTime])
+            except:
+                try:
+                    is_uploaded = await message.reply_video(i, width=1920, height=1080, progress=progress_updater, progress_args=[message, text, startTime])
+                except:
+                    is_uploaded = await message.reply_document(i, progress=progress_updater, progress_args=[message, text, startTime])
+            
+            if is_uploaded: uploaded += 1
         except Exception as e:
-            uploadfailed += f"- {e}: <code>{i}</code>\n"
+            uploadfailed += f"- {e}: `{i}`\n"
         
         await sleep(0.5)
 
@@ -67,4 +81,4 @@ async def func_unzip(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.error(e)
     
-    await sent_message.edit_text(f"Upload Completed! ({uploaded}/{len(response)})\n{uploadfailed}")
+    await message.reply_text(f"Upload Completed! ({uploaded}/{len(response)})\n{uploadfailed}", reply_to_message_id=message.id)

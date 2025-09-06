@@ -10,10 +10,10 @@ from .auto_linkblocker import autoLinkBlocker
 from .auto_translate import autoTranslate
 from .auto_triggers import autoTriggers
 
-async def filter_public_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
-    message = update.effective_message
+async def filter_public_chat(_, message: Message):
+    chat = message.chat
+    user = message.from_user
+    message = update.message
 
     is_editing = edit_database(chat.id, user.id, message)
     if is_editing:
@@ -21,7 +21,7 @@ async def filter_public_chat(update: Update, context: ContextTypes.DEFAULT_TYPE)
     
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
-        await message.reply_text("<blockquote><b>Error:</b> Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
+        await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
         return
     
     # Auto Link Blocker

@@ -1,18 +1,23 @@
 import os
-from telegram import Update
-from telegram.ext import ContextTypes
-from app import logger
+from time import time
+
+from pyrogram import filters
+from pyrogram.types import Message
+
+from app import bot, logger
+from app.helpers.args_extractor import extract_cmd_args
+from app.helpers.progress_updater import progress_updater
 from app.modules.ytdlp import youtube_download
 
-async def func_ytdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    effective_message = update.effective_message
-    url = " ".join(context.args)
+@bot.on_message(filters.command("ytdl", ["/", "!", "-", "."]))
+async def func_ytdl(_, message: Message):
+    url = extract_cmd_args(message.text, message.command)
 
     if not url or not url.startswith("http"):
-        await effective_message.reply_text("Download audio/song from youtube. E.g. <code>/ytdl url</code>")
+        await message.reply_text(f"Download audio/song from youtube. E.g. `/{message.command[0]} url`")
         return
     
-    sent_message = await effective_message.reply_text("Downloading...")
+    sent_message = await message.reply_text("Downloading...")
 
     response = youtube_download(url)
     if not isinstance(response, dict):
@@ -23,8 +28,12 @@ async def func_ytdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file_path = response["file_path"]
 
     try:
-        await effective_message.reply_audio(file_path, title=file_name, filename=file_name)
-        await sent_message.delete()
+        startTime = time()
+        text = (
+            f"Uploading...\n"
+            f"**File:** `{file_name}`"
+        )
+        await message.reply_audio(file_path, title=file_name, progress=progress_updater, progress_args=[message, text, startTime])
     except Exception as e:
         await sent_message.edit_text(str(e))
     

@@ -9,11 +9,16 @@ from app.utils.database import DBConstants, database_search
 from .edit_database import edit_database
 from .auto_translate import autoTranslate
 
-async def filter_private_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
-    message = update.effective_message
+async def filter_private_chat(_, message: Message):
+    chat = message.chat
+    user = message.from_user
+    message = update.message
     re_msg = message.reply_to_message
+
+    
+    user_data = MemoryDB.data_center.get(message.from_user.id) or {}
+    support_status = user_data.get("support_status")
+    support_state_one()
 
     # Support Conversation
     if re_msg:
@@ -27,8 +32,8 @@ async def filter_private_chat(update: Update, context: ContextTypes.DEFAULT_TYPE
                 # if user sending message to owner/support-team then add userinfo
                 if user.id != config.owner_id:
                     text += (
-                        f"Name: {user.mention_html()}\n"
-                        f"UserID: <code>{user.id}</code>\n"
+                        f"Name: {user.mention.HTML}\n"
+                        f"UserID: `{user.id}`\n"
                     )
 
                     btn = BuildKeyboard.ubutton([{"User Profile": f"tg://user?id={user.id}"}]) if user.username else None
@@ -55,7 +60,7 @@ async def filter_private_chat(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     user_data = database_search(DBConstants.USERS_DATA, "user_id", user.id)
     if not user_data:
-        await message.reply_text("<blockquote><b>Error:</b> Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
+        await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
         return
     
     # Echo message

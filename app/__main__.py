@@ -70,7 +70,7 @@ async def post_init():
 
     # Send alive message to bot owner
     try:
-        await bot.send_message(config.owner_id, "<blockquote><b>Bot Started!</b></blockquote>")
+        await bot.send_message(config.owner_id, "<blockquote>**Bot Started!**</blockquote>")
     except Exception as e:
         logger.error(e)
     
@@ -104,12 +104,12 @@ async def server_alive():
         await asyncio.sleep(180) # 3 min
 
 
-# async def default_error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# async def default_error_handler(_, message: Message):
 #     logger.error(context.error)
 #     auto_del_message = False
 
 #     if isinstance(context.error, (Conflict, NetworkError, TimedOut)):
-#         text = f"<blockquote>An error occured</blockquote>\n\n<code>{context.error}</code>"
+#         text = f"<blockquote>An error occured</blockquote>\n\n`{context.error}`"
 #         auto_del_message = True
     
 #     else:
@@ -122,9 +122,9 @@ async def server_alive():
 #         text = (
 #             "<blockquote>An error occured</blockquote>\n\n"
 
-#             f"<b>• Type:</b> <code>{type(context.error).__name__}</code>\n"
-#             f"<b>• Message:</b> <code>{str(context.error)}</code>\n"
-#             "<b>• Traceback:</b>\n\n"
+#             f"**• Type:** `{type(context.error).__name__}`\n"
+#             f"**• Message:** `{str(context.error)}`\n"
+#             "**• Traceback:**\n\n"
 #             f"<pre>{error_text}</pre>"
 #         )
     

@@ -1,48 +1,45 @@
 from time import time
-from io import BytesIO
 
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
 
+from app import bot
 from app.modules.qr import QR
 
-async def func_decqr(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    effective_message = update.effective_message
-    re_msg = effective_message.reply_to_message
+@bot.on_message(filters.command("decqr", ["/", "!", "-", "."]))
+async def func_decqr(_, message: Message):
+    user = message.from_user
+    re_msg = message.reply_to_message
 
     if not re_msg or not (re_msg.photo or re_msg.document):
-        await effective_message.reply_text("Reply a QR code image using /decqr to decode it!")
+        await message.reply_text(f"Reply a QR code image using /{message.command[0]} to decode it!")
         return
     
     if re_msg.document and not "image" in re_msg.document.mime_type:
-        await effective_message.reply_text("Replied message isn't an image!")
+        await message.reply_text("Replied message isn't an image!")
         return
     
     image = re_msg.photo or re_msg.document
     if isinstance(image, tuple): image = image[-1]
     
     if re_msg.photo:
-        sent_message = await effective_message.reply_photo(image.file_id, "Please wait...")
+        sent_message = await message.reply_photo(image.file_id, "Please wait...")
     else:
-        sent_message = await effective_message.reply_document(image.file_id, "Please wait...")
-
+        sent_message = await message.reply_document(image.file_id, "Please wait...")
+    
     # Reading Image file in memory
-    image_data = await image.get_file()
-    imageFile = BytesIO()
-    await image_data.download_to_memory(imageFile)
-    imageFile.seek(0)
+    image_data = await re_msg.download(f"/downloads/qrimage_{int(time())}.png", True)
 
     start_time = time()
-    response = QR.decode_qr(imageFile)
+    response = QR.decode_qr(image_data)
     response_time = f"{((time() - start_time) * 1000):.2f}ms"
 
     if response:
         text = (
-            f"<b>Decoded Data:</b> <code>{response.data.decode()}</code>\n"
-            f"<b>Type:</b> <code>{response.type}</code>\n"
-            f"<b>R.time:</b> <code>{response_time}</code>\n"
-            f"<b>Req by:</b> {user.mention_html()} | <code>{user.id}</code>"
+            f"**Decoded Data:** `{response.data.decode()}`\n"
+            f"**Type:** `{response.type}`\n"
+            f"**R.time:** `{response_time}`\n"
+            f"**Req by:** {user.mention.HTML} | `{user.id}`"
         )
     else:
         text = "Oops! Something went wrong!"

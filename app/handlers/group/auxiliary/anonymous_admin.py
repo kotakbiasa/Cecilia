@@ -2,10 +2,10 @@ import asyncio
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MemoryDB
 
-async def anonymousAdmin(chat, effective_message, timeout=10):
+async def anonymousAdmin(chat, message, timeout=10):
     """
     :param chat: `update.effective_chat`
-    :param effective_message: `update.effective_message`
+    :param message: `update.message`
     :param timeout: waiting time in sec
     :returns User: `telegram.User`
     """
@@ -13,7 +13,7 @@ async def anonymousAdmin(chat, effective_message, timeout=10):
     MemoryDB.insert(DBConstants.DATA_CENTER, chat.id, {"anonymous_admin": None})
 
     btn = BuildKeyboard.cbutton([{"Verify": "admin_anonymous_verify"}])
-    sent_message = await effective_message.reply_text(f"UwU, annoymous admin! Click on <code>Verify</code> to proceed next!", reply_markup=btn)
+    sent_message = await message.reply_text(f"UwU, annoymous admin! Click on `Verify` to proceed next!", reply_markup=btn)
 
     for i in range(timeout):
         data_center = MemoryDB.data_center[chat.id]
@@ -26,7 +26,7 @@ async def anonymousAdmin(chat, effective_message, timeout=10):
     await sent_message.delete()
     if not anonymous_admin:
         try:
-            await effective_message.delete()
+            await message.delete()
         except:
             pass
         

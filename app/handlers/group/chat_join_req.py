@@ -2,13 +2,13 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from app.utils.database import DBConstants, database_search
 
-async def join_request_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def join_request_handler(_, message: Message):
     join_request_update = update.chat_join_request
     chat = join_request_update.chat
     
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
-        await chat.send_message("<blockquote><b>Error:</b> Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
+        await chat.send_message("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
         return
     
     chat_join_req = chat_data.get("chat_join_req")

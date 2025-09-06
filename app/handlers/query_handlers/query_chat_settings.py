@@ -8,9 +8,9 @@ from app.utils.database import DBConstants, MemoryDB
 from ..user_handlers.settings import PvtChatSettingsData
 from ..group.chat_settings import GroupChatSettingsData
 
-async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
+async def query_chat_settings(_, message: Message):
+    chat = message.chat
+    user = message.from_user
     query = update.callback_query
 
     # refined query data
@@ -48,7 +48,7 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         # Handling PRIVATE chat setting
         if chat.type in [ChatType.PRIVATE]:
             text = PvtChatSettingsData.TEXT.format(
-                user.mention_html(),
+                user.mention.HTML,
                 user.id,
                 memory_data.get('lang') or '-',
                 'Enabled' if memory_data.get('auto_tr') else 'Disabled',
@@ -87,9 +87,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         is_editing_btn = True
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Language: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> <a href='{}'>Available language codes</a>\nExample: <code>en</code> for English language.</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Language: `{}`\n\n"
+            "<blockquote>**Note:** <a href='{}'>Available language codes</a>\nExample: `en` for English language.</blockquote>"
         ).format(memory_data.get("lang") or "-", TL_LANG_CODES_URL)
     
     elif query_data == "auto_tr":
@@ -102,9 +102,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         is_boolean_btn = True
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Auto translate: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> This will automatically translate chat messages to seleted language.</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Auto translate: `{}`\n\n"
+            "<blockquote>**Note:** This will automatically translate chat messages to seleted language.</blockquote>"
         ).format("Enabled" if memory_data.get("auto_tr") else "Disabled")
     
     elif query_data == "echo":
@@ -117,9 +117,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         is_boolean_btn = True
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Echo: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> This will echo user messages.</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Echo: `{}`\n\n"
+            "<blockquote>**Note:** This will echo user messages.</blockquote>"
         ).format("Enabled" if memory_data.get("echo") else 'Disabled')
     
     elif query_data == "antibot":
@@ -132,9 +132,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         is_boolean_btn = True
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Antibot: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> If someone try to add bots in chat, this will kick the bot, if enabled.</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Antibot: `{}`\n\n"
+            "<blockquote>**Note:** If someone try to add bots in chat, this will kick the bot, if enabled.</blockquote>"
         ).format("Enabled" if memory_data.get("antibot") else 'Disabled')
     
     elif query_data == "welcome_user":
@@ -145,9 +145,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         })
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Welcome Members: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> This will welcome new chat member, if enabled.</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Welcome Members: `{}`\n\n"
+            "<blockquote>**Note:** This will welcome new chat member, if enabled.</blockquote>"
         ).format("Enabled" if memory_data.get("welcome_user") else 'Disabled')
 
         btn_data = [
@@ -165,9 +165,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         })
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Welcome Photo: <code>{}</code>\n"
-            "<blockquote><b>Note:</b>Welcome photo to greet new chat members. (Currently only supports URL photo link)</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Welcome Photo: `{}`\n"
+            "<blockquote>**Note:**Welcome photo to greet new chat members. (Currently only supports URL photo link)</blockquote>"
         ).format(memory_data.get("welcome_photo") or "-")
 
         btn_data = [
@@ -189,9 +189,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
             custom_message = "Message is too long."
         
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Custom Welcome Message:\n<code>{}</code>\n"
-            "<blockquote><b>Note:</b> Custom welcome message to greet new chat members. (supports telegram formatting)</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Custom Welcome Message:\n`{}`\n"
+            "<blockquote>**Note:** Custom welcome message to greet new chat members. (supports telegram formatting)</blockquote>"
         ).format(custom_message)
 
         btn_data = [
@@ -202,14 +202,14 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     elif query_data == "formattings":
         text = (
-            "<blockquote><b>Formattings</b></blockquote>\n\n"
-            "• <code>{first}</code> - users firstname\n"
-            "• <code>{last}</code> - users lastname\n"
-            "• <code>{fullname}</code> - users fullname\n"
-            "• <code>{username}</code> - users username\n"
-            "• <code>{mention}</code> - mention user\n"
-            "• <code>{id}</code> - users ID\n"
-            "• <code>{chatname}</code> - chat title"
+            "<blockquote>**Formattings**</blockquote>\n\n"
+            "• `{first}` - users firstname\n"
+            "• `{last}` - users lastname\n"
+            "• `{fullname}` - users fullname\n"
+            "• `{username}` - users username\n"
+            "• `{mention}` - mention user\n"
+            "• `{id}` - users ID\n"
+            "• `{chatname}` - chat title"
         )
 
         btn_data = [{"Back": "csettings_custom_welcome_msg", "Close": "csettings_close"}]
@@ -225,9 +225,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         is_boolean_btn = True
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Farewell Members: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> This will send a farewell message to chat when a member left, if enabled.</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Farewell Members: `{}`\n\n"
+            "<blockquote>**Note:** This will send a farewell message to chat when a member left, if enabled.</blockquote>"
         ).format("Enabled" if memory_data.get("farewell_user") else 'Disabled')
     
     elif query_data == "chat_join_req":
@@ -238,9 +238,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         })
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Join Request: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> This will auto Approve or Decline or Do Nothing while a member request to join this Group. (Bot should have add/invite member permission.)</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Join Request: `{}`\n\n"
+            "<blockquote>**Note:** This will auto Approve or Decline or Do Nothing while a member request to join this Group. (Bot should have add/invite member permission.)</blockquote>"
         ).format(memory_data.get("chat_join_req"))
 
         btn_data = [
@@ -258,9 +258,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         is_boolean_btn = True
         
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Service Messages: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> This will auto delete chat service messages (new member join, chat photo update etc.)</blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Service Messages: `{}`\n\n"
+            "<blockquote>**Note:** This will auto delete chat service messages (new member join, chat photo update etc.)</blockquote>"
         ).format("Enabled" if memory_data.get("service_messages") else 'Disabled')
     
     elif query_data == "links_behave":
@@ -271,9 +271,9 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         })
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Links Behave: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> Links has 3 behaves: [ Delete / Convert to base64 / Do Nothing ]\n"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Links Behave: `{}`\n\n"
+            "<blockquote>**Note:** Links has 3 behaves: [ Delete / Convert to base64 / Do Nothing ]\n"
             "The Links Behave action will be triggered if any non-admin member shares a link in the chat.</blockquote>"
         ).format(memory_data.get("links_behave"))
 
@@ -292,10 +292,10 @@ async def query_chat_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         is_editing_btn = True
 
         text = (
-            "<blockquote><b>Chat Settings</b></blockquote>\n\n"
-            "Allowed links: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> Send link/domain of allowed links. Example: <code>google.com or https://google.com</code> ! Multiple domain should be separated by comma."
-            "Allowed links won't be affected by <code>Links Behave</code></blockquote>"
+            "<blockquote>**Chat Settings**</blockquote>\n\n"
+            "Allowed links: `{}`\n\n"
+            "<blockquote>**Note:** Send link/domain of allowed links. Example: `google.com or https://google.com` ! Multiple domain should be separated by comma."
+            "Allowed links won't be affected by `Links Behave`</blockquote>"
         ).format(", ".join(memory_data.get("allowed_links") or []))
     
     elif query_data == "close":

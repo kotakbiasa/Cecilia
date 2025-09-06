@@ -5,6 +5,7 @@ from time import time
 
 from pyrogram import Client, __version__ as __pyroversion__
 from pyrogram.types import LinkPreviewOptions
+from pyrogram.enums import ClientPlatform
 
 from .utils.logger import setup_logging
 from config import CONFIG
@@ -44,8 +45,12 @@ bot = Client(
     name=ORIGINAL_BOT_USERNAME,
     api_id=config.api_id,
     api_hash=config.api_hash,
+    app_version=f"{__pyroversion__} x64",
+    device_model="Desktop",
+    system_version="Windows 11 x64",
     bot_token=config.bot_token,
     workdir="sys",
+    client_platform=ClientPlatform.DESKTOP,
     link_preview_options=LinkPreviewOptions(is_disabled=True)
 )
 

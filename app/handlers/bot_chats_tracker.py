@@ -3,11 +3,11 @@ from telegram.ext import ContextTypes
 from telegram.constants import ChatType
 from app.utils.database import DBConstants, MemoryDB, MongoDB
 
-async def bot_chats_tracker(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def bot_chats_tracker(_, message: Message):
     """
     **Tracks Groups/Private chat (where bot is added/removed/promoted/demoted)**
     """
-    chat = update.effective_chat
+    chat = message.chat
     chat_update = update.my_chat_member
 
     user = chat_update.from_user
@@ -70,4 +70,4 @@ async def bot_chats_tracker(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await chat.send_message(text)
     
     elif chat.type in [ChatType.CHANNEL] and new_status == ChatMember.ADMINISTRATOR:
-        await user.send_message(f"You have added me in {chat.title}\nChatID: <code>{chat.id}</code>")
+        await user.send_message(f"You have added me in {chat.title}\nChatID: `{chat.id}`")

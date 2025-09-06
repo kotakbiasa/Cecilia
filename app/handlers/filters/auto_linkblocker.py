@@ -4,7 +4,7 @@ from app.modules.base64 import BASE64
 
 async def autoLinkBlocker(message: Message, user: User, link_rules: dict):
     """
-    :param message: `update.effective_message`
+    :param message: `update.message`
     :param user: `update.effective_user`
     :param link_rules: `dict` of link rules (database variables)
     """
@@ -31,15 +31,15 @@ async def autoLinkBlocker(message: Message, user: User, link_rules: dict):
         
         else:
             if links_behave == "delete":
-                text = text.replace(link, f"<code>forbidden link</code>")
+                text = text.replace(link, f"`forbidden link`")
             
             elif links_behave == "convert":
-                text = text.replace(link, f"<code>{BASE64.encode(link)}</code>")
+                text = text.replace(link, f"`{BASE64.encode(link)}`")
 
     if counter != len(links):
         await message.delete()
         text = (
-            f"{user.mention_html()}: {text}\n\n"
+            f"{user.mention.HTML}: {text}\n\n"
             "<i>Delete reason: your message contains forbidden link/s!</i>"
         )
         await message.reply_text(text)

@@ -11,10 +11,9 @@ from app.utils.database import MemoryDB, database_add_user
 async def func_start(_, message: Message):
     user = message.from_user
     chat = message.chat
-    bot_info = await bot.get_me()
 
     if chat.type not in [ChatType.PRIVATE]:
-        btn = BuildKeyboard.ubutton([{"Start me in PM": f"http://t.me/{bot_info.username}?start=start"}])
+        btn = BuildKeyboard.ubutton([{"Start me in PM": f"http://t.me/{bot.me.username}?start=start"}])
         await message.reply_text(f"Hey, {user.first_name}\nStart me in PM!", reply_markup=btn)
         return
     
@@ -33,19 +32,19 @@ async def func_start(_, message: Message):
             pass
 
     text = (
-        f"Hey, {user.first_name}! I'm {bot_info.first_name}!\n\n"
+        f"Hey, {user.first_name}! I'm {bot.me.first_name}!\n\n"
         "I can help you to manage your chat with a lots of useful features!\n"
         "Feel free to add me to your chat.\n\n"
         "• /help - Get bot help menu\n\n"
-        "<b>• Source code:</b> <a href='https://github.com/bishalqx980/tgbot'>GitHub</a>\n"
-        "<b>• Report bug:</b> <a href='https://github.com/bishalqx980/tgbot/issues'>Report</a>\n"
-        "<b>• Developer:</b> <a href='https://t.me/bishalqx680/22'>bishalqx980</a>"
+        "**• Source code:** <a href='https://github.com/bishalqx980/tgbot'>GitHub</a>\n"
+        "**• Report bug:** <a href='https://github.com/bishalqx980/tgbot/issues'>Report</a>\n"
+        "**• Developer:** <a href='https://t.me/bishalqx680/22'>bishalqx980</a>"
     )
 
-    if bot_info.id != ORIGINAL_BOT_ID:
+    if bot.me.id != ORIGINAL_BOT_ID:
         text += f"\n\n<blockquote>Cloned bot of @{ORIGINAL_BOT_USERNAME}</blockquote>"
 
-    btn_data = {"Add me to your chat": f"http://t.me/{bot_info.username}?startgroup=help"}
+    btn_data = {"Add me to your chat": f"http://t.me/{bot.me.username}?startgroup=help"}
     if support_chat:
         btn_data.update({"Support Chat": support_chat})
     

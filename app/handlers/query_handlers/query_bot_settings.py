@@ -9,8 +9,8 @@ from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MemoryDB, MongoDB
 from ..owner_handlers.bsettings import BotSettingsData
 
-async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
+async def query_bot_settings(_, message: Message):
+    user = message.from_user
     query = update.callback_query
 
     # refined query data
@@ -46,9 +46,9 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
         })
 
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "Show Bot Photo: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> Send's /start message or other supported message with Bot photo.</blockquote>"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "Show Bot Photo: `{}`\n\n"
+            "<blockquote>**Note:** Send's /start message or other supported message with Bot photo.</blockquote>"
         ).format("Yes" if bot_data.get("show_bot_pic") else "No")
 
         btn_data = [
@@ -67,9 +67,9 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
         is_editing_btn = True
 
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "Images (link): <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> Images that will be randomly shown with various command messages. Multiple links should be separated by comma.</blockquote>"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "Images (link): `{}`\n\n"
+            "<blockquote>**Note:** Images that will be randomly shown with various command messages. Multiple links should be separated by comma.</blockquote>"
         ).format(len(images or []))
 
         if images:
@@ -90,9 +90,9 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
         is_editing_btn = True
 
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "Support Chat (link): <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> Group chat link for bot support (optional)</blockquote>"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "Support Chat (link): `{}`\n\n"
+            "<blockquote>**Note:** Group chat link for bot support (optional)</blockquote>"
         ).format(bot_data.get("support_chat") or '-')
     
     elif query_data == "server_url":
@@ -105,9 +105,9 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
         is_editing_btn = True
 
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "Server URL: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> If <code>Server URL</code> isn't provided and bot is deployed on render (free) then bot will fall asleep. (Server Reboot Required)</blockquote>"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "Server URL: `{}`\n\n"
+            "<blockquote>**Note:** If `Server URL` isn't provided and bot is deployed on render (free) then bot will fall asleep. (Server Reboot Required)</blockquote>"
         ).format(bot_data.get("server_url") or '-')
 
     elif query_data == "sudo":
@@ -120,9 +120,9 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
         is_editing_btn = True
 
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "Sudo users: <code>{}</code>\n\n"
-            "<blockquote><b>Note: (Warning)</b> Sudo users have owner functions access!\nAdd UserID eg. <code>2134776547</code>\nMultiple ID should be separated by comma.</blockquote>"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "Sudo users: `{}`\n\n"
+            "<blockquote>**Note: (Warning)** Sudo users have owner functions access!\nAdd UserID eg. `2134776547`\nMultiple ID should be separated by comma.</blockquote>"
         ).format(", ".join(str(user_id) for user_id in (bot_data.get("sudo_users") or [])))
 
     elif query_data == "shrinkme_api":
@@ -135,9 +135,9 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
         is_editing_btn = True
 
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "Shrinkme API: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> This API is for /shorturl command.</blockquote>"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "Shrinkme API: `{}`\n\n"
+            "<blockquote>**Note:** This API is for /shorturl command.</blockquote>"
         ).format(bot_data.get("shrinkme_api") or '-')
     
     elif query_data == "omdb_api":
@@ -150,9 +150,9 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
         is_editing_btn = True
 
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "OMDB API: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> This API is for /movie command.</blockquote>"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "OMDB API: `{}`\n\n"
+            "<blockquote>**Note:** This API is for /movie command.</blockquote>"
         ).format(bot_data.get("omdb_api") or '-')
     
     elif query_data == "weather_api":
@@ -165,21 +165,21 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
         is_editing_btn = True
 
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "Weather API: <code>{}</code>\n\n"
-            "<blockquote><b>Note:</b> This API is for /weather command.</blockquote>"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "Weather API: `{}`\n\n"
+            "<blockquote>**Note:** This API is for /weather command.</blockquote>"
         ).format(bot_data.get("weather_api") or '-')
     
     elif query_data == "database":
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "<b>• Restore Database</b>\n"
-            "- <i>Delete MongoDB's <code>bot_data</code> and restore from backup in <code>config.env</code></i>\n\n"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "**• Restore Database**\n"
+            "- <i>Delete MongoDB's `bot_data` and restore from backup in `config.env`</i>\n\n"
 
-            "<b>• Wipe Memory Cache</b>\n"
+            "**• Wipe Memory Cache**\n"
             "- <i>This will clean memory cache.</i>\n\n"
 
-            "<blockquote><b>Note:</b> Use <code>Restore Database</code> with caution!</blockquote>"
+            "<blockquote>**Note:** Use `Restore Database` with caution!</blockquote>"
         )
 
         btn_data = [
@@ -190,8 +190,8 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
     
     elif query_data == "restoredb":
         text = (
-            "<blockquote><b>Bot Settings</b></blockquote>\n\n"
-            "<b>• Restore MongoDB Database?</b>"
+            "<blockquote>**Bot Settings**</blockquote>\n\n"
+            "**• Restore MongoDB Database?**"
         )
 
         btn_data = [
@@ -217,8 +217,8 @@ async def query_bot_settings(update: Update, context: ContextTypes.DEFAULT_TYPE)
             bot_data.clear()
             update_database()
             text = (
-                "Database has been restored successfully from <code>config.env</code>\n"
-                "<blockquote><b>Note:</b> Reboot is recommended.</blockquote>"
+                "Database has been restored successfully from `config.env`\n"
+                "<blockquote>**Note:** Reboot is recommended.</blockquote>"
             )
         else:
             text = "Something went wrong! Check /log"

@@ -8,16 +8,16 @@ from ..auxiliary.chat_admins import ChatAdmins
 from ..auxiliary.anonymous_admin import anonymousAdmin
 
 @pm_error
-async def func_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
-    effective_message = update.effective_message
-    re_msg = effective_message.reply_to_message
+async def func_filter(_, message: Message):
+    chat = message.chat
+    user = message.from_user
+    message = update.message
+    re_msg = message.reply_to_message
     value = re_msg.text_html or re_msg.caption if re_msg else None
-    keyword = " ".join(context.args).lower()
+    keyword = extract_cmd_args(message.text, message.command).lower()
     
     if user.is_bot:
-        user = await anonymousAdmin(chat, effective_message)
+        user = await anonymousAdmin(chat, message)
         if not user:
             return
     
@@ -25,18 +25,18 @@ async def func_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await chat_admins.fetch_admins(chat, user_id=user.id)
     
     if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
-        await effective_message.reply_text("You aren't an admin in this chat!")
+        await message.reply_text("You aren't an admin in this chat!")
         return
     
     if chat_admins.is_user_admin and not chat_admins.is_user_admin.can_change_info:
-        await effective_message.reply_text("You don't have enough permission to manage this chat!")
+        await message.reply_text("You don't have enough permission to manage this chat!")
         return
     
     if not value or not keyword:
         data = {
             "user_id": user.id,
             "chat_id": chat.id,
-            "effective_message_id": effective_message.id
+            "message_id": message.id
         }
 
         MemoryDB.insert(DBConstants.DATA_CENTER, chat.id, data)
@@ -44,27 +44,27 @@ async def func_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "To set filters for this chat follow the instruction below...\n"
             "<blockquote>Reply the message with /filter which one you want to set as value for your keyword!</blockquote>"
-            "Example: <code>/filter hi</code> send this by replying any message! suppose the message is <code>Hi, How are you!</code>\n"
-            "Next time if you say <code>Hi</code> in chat, the bot will reply with <code>Hi, How are you!</code>\n\n"
-            "<i><b>Note:</b> Use comma for adding multiple filter. eg. <code>/filter hi, bye</code></i>\n\n"
+            "Example: `/filter hi` send this by replying any message! suppose the message is `Hi, How are you!`\n"
+            "Next time if you say `Hi` in chat, the bot will reply with `Hi, How are you!`\n\n"
+            "<i>**Note:** Use comma for adding multiple filter. eg. `/filter hi, bye`</i>\n\n"
             "<i>Ques: How to remove a filter?\n Ans: /remove for instruction...</i>\n\n"
-            "<b><u>Text formatting</u></b>\n"
-            "<code>{first}</code> first name\n"
-            "<code>{last}</code> last name\n"
-            "<code>{fullname}</code> fullname\n"
-            "<code>{username}</code> username\n"
-            "<code>{mention}</code> mention\n"
-            "<code>{id}</code> id\n"
-            "<code>{chatname}</code> chat title\n"
+            "**<u>Text formatting</u>**\n"
+            "`{first}` first name\n"
+            "`{last}` last name\n"
+            "`{fullname}` fullname\n"
+            "`{username}` username\n"
+            "`{mention}` mention\n"
+            "`{id}` id\n"
+            "`{chatname}` chat title\n"
         )
 
         btn = BuildKeyboard.cbutton([{"Close": "misc_close"}])
-        await effective_message.reply_text(text, reply_markup=btn)
+        await message.reply_text(text, reply_markup=btn)
         return
 
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
-        await effective_message.reply_text("<blockquote><b>Error:</b> Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
+        await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
         return
     
     filters = chat_data.get("filters")
@@ -89,4 +89,4 @@ async def func_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MemoryDB.insert(DBConstants.CHATS_DATA, chat.id, chat_data)
     msg_keywords = ", ".join(keywords)
     
-    await effective_message.reply_text(f"{msg_keywords} filters added!")
+    await message.reply_text(f"{msg_keywords} filters added!")

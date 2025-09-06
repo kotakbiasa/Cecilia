@@ -1,38 +1,39 @@
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ChatType
+from pyrogram import filters
+from pyrogram.types import Message
+from pyrogram.enums import ChatType
 
-from app import TL_LANG_CODES_URL
+from app import bot, TL_LANG_CODES_URL
 from app.helpers import BuildKeyboard
-from app.utils.database import DBConstants, database_search
+from app.helpers.args_extractor import extract_cmd_args
 from app.modules.translator import fetch_lang_codes, translate
+from app.utils.database import DBConstants, database_search
 
-async def func_tr(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
-    effective_message = update.effective_message
-    re_msg = effective_message.reply_to_message
+@bot.on_message(filters.command("tr", ["/", "!", "-", "."]))
+async def func_tr(_, message: Message):
+    chat = message.chat
+    user = message.from_user
+    re_msg = message.reply_to_message
     text = (re_msg.text or re_msg.caption) if re_msg else None
-    context_args = " ".join(context.args)
+    args = extract_cmd_args(message.text, message.command)
 
-    if not text and not context_args:
+    if not text and not args:
         btn = BuildKeyboard.ubutton([{"Language code's": TL_LANG_CODES_URL}])
-        await effective_message.reply_text("Use <code>/tr text</code> or <code>/tr lang code text</code> or reply the text with <code>/tr</code> or <code>/tr lang code</code>\n\nEnable auto translator mode for this chat from /settings", reply_markup=btn)
+        await message.reply_text(f"Use `/{message.command[0]} text` or `/{message.command[0]} lang code text` or reply the text with `/{message.command[0]}` or `/{message.command[0]} lang code`\n\nEnable auto translator mode for this chat from /settings", reply_markup=btn)
         return
     
     to_translate = None
     lang_code = None
     LANG_CODE_LIST = fetch_lang_codes()
     
-    if context_args:
-        words = context_args.split()
+    if args:
+        words = args.split()
         first_word = words[0]
         if first_word in LANG_CODE_LIST:
             lang_code = first_word
             to_translate = " ".join(words[1:])
     
-    if not text and not to_translate and context_args: # /tr text | lang_code = database
-        to_translate = context_args
+    if not text and not to_translate and args: # /tr text | lang_code = database
+        to_translate = args
 
     elif text and not to_translate: # /tr (maybe lang_code or maybe not) and replied
         to_translate = text
@@ -49,23 +50,23 @@ async def func_tr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         database_data = database_search(collection_name, to_find, to_match)
         if not database_data:
-            await effective_message.reply_text("<blockquote><b>Error:</b> Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
+            await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
             return
         
         lang_code = database_data.get("lang")
     
     if not lang_code:
         btn = BuildKeyboard.ubutton([{"Language code's": TL_LANG_CODES_URL}])
-        await effective_message.reply_text("Chat language code wasn't found! Use /tr to get more details or /settings to set chat language.", reply_markup=btn)
+        await message.reply_text(f"Chat language code wasn't found! Use /{message.command[0]} to get more details or /settings to set chat language.", reply_markup=btn)
         return
     
-    sent_message = await effective_message.reply_text("💭 Translating...")
+    sent_message = await message.reply_text("💭 Translating...")
 
     translated_text = translate(to_translate, lang_code)
     btn = None
 
     if translated_text == False:
-        text = "Invalid language code was given! Use /tr to get more details or /settings to set chat language."
+        text = f"Invalid language code was given! Use /{message.command[0]} to get more details or /settings to set chat language."
         btn = BuildKeyboard.ubutton([{"Language code's": TL_LANG_CODES_URL}])
 
     elif not translated_text:

@@ -11,7 +11,7 @@ from app.utils.database import MemoryDB, database_add_user
 
 class HelpMenuData:
     TEXT = (
-        "<blockquote><b>Help Menu</b></blockquote>\n\n"
+        "<blockquote>**Help Menu**</blockquote>\n\n"
         "Hey! Welcome to the bot help section.\n"
         "I'm a Telegram bot that manages groups and handles various tasks effortlessly.\n\n"
         "• /start - Start the bot\n"
@@ -30,10 +30,9 @@ class HelpMenuData:
 async def func_help(_, message: Message):
     user = message.from_user
     chat = message.chat
-    bot_info = await bot.get_me()
 
     if chat.type not in [ChatType.PRIVATE]:
-        btn = BuildKeyboard.ubutton([{"Click here for help": f"http://t.me/{bot_info.username}?start=help"}])
+        btn = BuildKeyboard.ubutton([{"Click here for help": f"http://t.me/{bot.me.username}?start=help"}])
         await message.reply_text(f"Hey, {user.first_name}\nContact me in PM for help!", reply_markup=btn)
         return
     

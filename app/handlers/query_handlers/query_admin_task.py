@@ -3,9 +3,9 @@ from telegram.ext import ContextTypes
 from app.utils.database import DBConstants, MemoryDB, MongoDB, database_search
 from app.handlers.group.auxiliary.chat_admins import ChatAdmins
 
-async def query_groupManagement(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
+async def query_groupManagement(_, message: Message):
+    chat = message.chat
+    user = message.from_user
     query = update.callback_query
 
     # refined query data
@@ -51,7 +51,7 @@ async def query_groupManagement(update: Update, context: ContextTypes.DEFAULT_TY
             await query.edit_message_text(str(e))
             return
         
-        await query.edit_message_text(f"Great! Admin {user.mention_html()} has cleared all warnings of {victim_mention or f'<code>{victim_id}</code>'}.")
+        await query.edit_message_text(f"Great! Admin {user.mention.HTML} has cleared all warnings of {victim_mention or f'`{victim_id}`'}.")
     
     elif query_data.startswith("leavechat_"):
         # expecting leavechat_[adminUserID]

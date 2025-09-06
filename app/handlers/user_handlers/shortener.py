@@ -1,16 +1,18 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
+
+from app import bot
+from app.helpers.args_extractor import extract_cmd_args
 from app.modules.shrinkme import shortener_url
 
-async def func_shorturl(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    effective_message = update.effective_message
-    re_msg = effective_message.reply_to_message
-    url = (re_msg.text or re_msg.caption) if re_msg else " ".join(context.args)
+@bot.on_message(filters.command("shorturl", ["/", "!", "-", "."]))
+async def func_shorturl(_, message: Message):
+    re_msg = message.reply_to_message
+    url = (re_msg.text or re_msg.caption) if re_msg else extract_cmd_args(message.text, message.command)
 
     if not url:
-        await effective_message.reply_text("Use <code>/shorturl url</code>\nor reply the url with <code>/shorturl</code> command.\nE.g. <code>/shorturl https://google.com</code>")
+        await message.reply_text(f"Use `/{message.command[0]} url`\nor reply the url with `/{message.command[0]}` command.\nE.g. `/{message.command[0]} https://google.com`")
         return
     
-    shorted_url = await shortener_url(url)
-    text = "Oops! Something went wrong!" if not shorted_url else shorted_url
-    await effective_message.reply_text(text)
+    shortedURL = await shortener_url(url) or "Oops! Something went wrong!"
+    await message.reply_text(shortedURL)

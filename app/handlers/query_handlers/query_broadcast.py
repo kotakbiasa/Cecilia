@@ -5,11 +5,11 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.error import BadRequest, Forbidden
 from app.utils.database import DBConstants, MemoryDB, MongoDB
-from app.modules.utils import Utils
+from app.modules.utils import UTILITY
 from app.helpers import BuildKeyboard
 
-async def query_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
+async def query_broadcast(_, message: Message):
+    chat = message.chat
     query = update.callback_query
 
     # refined query data
@@ -79,16 +79,16 @@ async def query_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         exception_users_id = []
 
         broadcastUpdateText = (
-            "<blockquote><b>Broadcast</b></blockquote>\n\n"
+            "<blockquote>**Broadcast**</blockquote>\n\n"
 
-            "<b>📦 Database information</b>\n"
-            "<b>• Total users:</b> <code>{}</code>\n"
-            "<b>• Active users:</b> <code>{}</code>\n\n"
+            "**📦 Database information**\n"
+            "**• Total users:** `{}`\n"
+            "**• Active users:** `{}`\n\n"
 
-            "<b>📊 Progress</b>\n"
-            "<b>• Sent:</b> <code>{}</code>\n"
-            "<b>• Exception:</b> <code>{}</code>\n"
-            "<b>• Progress:</b> <code>{}%</code>\n"
+            "**📊 Progress**\n"
+            "**• Sent:** `{}`\n"
+            "**• Exception:** `{}`\n"
+            "**• Progress:** `{}%`\n"
             "{}" # progress bar
         )
 
@@ -158,7 +158,7 @@ async def query_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     pass
             
             progress = (sent_count + exception_count) * 100 / len(active_users)
-            progressBar = Utils.createProgressBar(progress)
+            progressBar = UTILITY.createProgressBar(progress)
 
             updateText = broadcastUpdateText.format(
                 len(users_id),
@@ -187,7 +187,7 @@ async def query_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             time_took = f"{(broadcastEndTime - broadcastStartTime):.2f} sec"
         
-        updateText += f"\n\n<b>Broadcast Done ✅: {time_took}</b>"
+        updateText += f"\n\n**Broadcast Done ✅: {time_took}**"
         
         try:
             await query.edit_message_text(updateText)

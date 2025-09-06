@@ -3,13 +3,13 @@ from telegram.ext import ContextTypes
 from app.utils.database import DBConstants, database_search
 from .group.auxiliary.chat_admins import ChatAdmins
 
-async def chat_status_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def chat_status_update(_, message: Message):
     """
     **Status update of Group/SuperGroup**
     """
-    chat = update.effective_chat
-    cause_user = update.effective_user
-    effective_message = update.effective_message
+    chat = message.chat
+    cause_user = message.from_user
+    message = update.message
 
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
@@ -24,17 +24,17 @@ async def chat_status_update(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if service_messages:
         try:
-            await effective_message.delete()
+            await message.delete()
         except:
             pass
     
     # handling new chat member
-    if effective_message.new_chat_members:
-        if len(effective_message.new_chat_members) > 1:
+    if message.new_chat_members:
+        if len(message.new_chat_members) > 1:
             await chat.send_message("I can't handle this! Too many members are joining at once!")
             return
         
-        victim = effective_message.new_chat_members[0]
+        victim = message.new_chat_members[0]
 
         # Antibot
         if victim.is_bot and antibot:
@@ -61,7 +61,7 @@ async def chat_status_update(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 await chat.send_message(str(e))
                 return
             
-            await chat.send_message(f"Antibot: {victim.mention_html()} has been kicked from this chat!")
+            await chat.send_message(f"Antibot: {victim.mention.HTML} has been kicked from this chat!")
         
         # greeting new chat member
         elif welcome_user:
@@ -71,7 +71,7 @@ async def chat_status_update(update: Update, context: ContextTypes.DEFAULT_TYPE)
                     "{last}": victim.last_name or "",
                     "{fullname}": victim.full_name,
                     "{username}": victim.name,
-                    "{mention}": victim.mention_html(),
+                    "{mention}": victim.mention.HTML,
                     "{id}": victim.id,
                     "{chatname}": chat.title
                 }
@@ -82,7 +82,7 @@ async def chat_status_update(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 greeting_message = custom_welcome_msg
             
             else:
-                greeting_message = f"Hi, {victim.mention_html()}! Welcome to {chat.title}!"
+                greeting_message = f"Hi, {victim.mention.HTML}! Welcome to {chat.title}!"
             
             if welcome_photo:
                 try:
@@ -94,5 +94,5 @@ async def chat_status_update(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await chat.send_message(greeting_message)
     
     # farewell for left chat member
-    elif effective_message.left_chat_member and farewell_user:
-        await chat.send_message(f"Nice to see you! {effective_message.left_chat_member.mention_html()} has left us!")
+    elif message.left_chat_member and farewell_user:
+        await chat.send_message(f"Nice to see you! {message.left_chat_member.mention.HTML} has left us!")

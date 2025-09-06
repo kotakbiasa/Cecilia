@@ -8,7 +8,7 @@ from telegram.constants import ChatType
 from app import logger
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MemoryDB
-from app.modules.utils import Utils
+from app.modules.utils import UTILITY
 
 def inlineQueryMaker(title, message, reply_markup=None, description=None):
     """
@@ -32,7 +32,7 @@ def inlineQueryMaker(title, message, reply_markup=None, description=None):
         return
 
 
-async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def inline_query_handler(_, message: Message):
     query = update.inline_query
     user = query.from_user
     message = query.query
@@ -41,22 +41,22 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     if not message:
         # instruction for user
         instruction_message = (
-            "<blockquote><b>Instructions: Available inline modes</b></blockquote>\n\n"
+            "<blockquote>**Instructions: Available inline modes**</blockquote>\n\n"
 
-            "<b>• Whisper: send someone a secret message in group chat! Similar command: /whisper</b>\n"
-            f"   <i>- Example: <code>{context.bot.name} @bishalqx980 This is a secret message 😜</code></i>\n\n"
+            "**• Whisper: send someone a secret message in group chat! Similar command: /whisper**\n"
+            f"   <i>- Example: `{context.bot.name} @bishalqx980 This is a secret message 😜`</i>\n\n"
 
-            f"<b>• userinfo({user.full_name}): Get your userinfo! Similar command: /info</b>\n"
-            f"   <i>- Example: <code>{context.bot.name} info</code></i>\n\n"
+            f"**• userinfo({user.full_name}): Get your userinfo! Similar command: /info**\n"
+            f"   <i>- Example: `{context.bot.name} info`</i>\n\n"
 
-            "<b>• Base64 Encode/Decode: Encode/Decode base64 in any chat! Similar commands: /encode | /decode</b>\n"
-            f"   <i>- Example: <code>{context.bot.name} base64 data or normal text</code></i>\n\n"
+            "**• Base64 Encode/Decode: Encode/Decode base64 in any chat! Similar commands: /encode | /decode**\n"
+            f"   <i>- Example: `{context.bot.name} base64 data or normal text`</i>\n\n"
 
-            f"<b>• Instructions: <code>{context.bot.name}</code> - to get this message!</b>\n\n"
+            f"**• Instructions: `{context.bot.name}` - to get this message!**\n\n"
 
-            "<b>• Source code:</b> <a href='https://github.com/bishalqx980/tgbot'>GitHub</a>\n"
-            "<b>• Report bug:</b> <a href='https://github.com/bishalqx980/tgbot/issues'>Report</a>\n"
-            "<b>• Developer:</b> <a href='https://t.me/bishalqx680/22'>bishalqx980</a>"
+            "**• Source code:** <a href='https://github.com/bishalqx980/tgbot'>GitHub</a>\n"
+            "**• Report bug:** <a href='https://github.com/bishalqx980/tgbot/issues'>Report</a>\n"
+            "**• Developer:** <a href='https://t.me/bishalqx680/22'>bishalqx980</a>"
         )
 
         results.append(inlineQueryMaker("ℹ️ Instructions", instruction_message, description="Click to see instructions...!"))
@@ -74,7 +74,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             process_whisper = False
             results.append(inlineQueryMaker(
                 "😮‍💨 Whisper: Error ❌",
-                f"<code>{whisper_username}</code> isn't a valid username! Check instructions... Example: <code>{context.bot.name} @username Your Secret message!</code>",
+                f"`{whisper_username}` isn't a valid username! Check instructions... Example: `{context.bot.name} @username Your Secret message!`",
                 description=f"{whisper_username}, isn't a valid username!"
             ))
         
@@ -105,7 +105,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         if process_whisper:
             data_center = MemoryDB.data_center.get("whisper_data") or {}
             whispers = data_center.get("whispers") or {}
-            whisper_key = Utils.randomString()
+            whisper_key = UTILITY.randomString()
 
             whispers.update({
                 whisper_key: {
@@ -132,17 +132,17 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     
     # need to be here after message update otherwise it shows cached info
     user_info = (
-        "<blockquote><code>» user.info()</code></blockquote>\n\n"
+        "<blockquote>`» user.info()`</blockquote>\n\n"
         
-        f"<b>• Full name:</b> <code>{user.full_name}</code>\n"
-        f"<b>  » First name:</b> <code>{user.first_name}</code>\n"
-        f"<b>  » Last name:</b> <code>{user.last_name}</code>\n"
-        f"<b>• Mention:</b> {user.mention_html()}\n"
-        f"<b>• Username:</b> {user.name if user.username else ''}\n"
-        f"<b>• ID:</b> <code>{user.id}</code>\n"
-        f"<b>• Lang:</b> <code>{user.language_code}</code>\n"
-        f"<b>• Is bot:</b> <code>{'Yes' if user.is_bot else 'No'}</code>\n"
-        f"<b>• Is premium:</b> <code>{'Yes' if user.is_premium else 'No'}</code>"
+        f"**• Full name:** `{user.full_name}`\n"
+        f"**  » First name:** `{user.first_name}`\n"
+        f"**  » Last name:** `{user.last_name}`\n"
+        f"**• Mention:** {user.mention.HTML}\n"
+        f"**• Username:** {user.name if user.username else ''}\n"
+        f"**• ID:** `{user.id}`\n"
+        f"**• Lang:** `{user.language_code}`\n"
+        f"**• Is bot:** `{'Yes' if user.is_bot else 'No'}`\n"
+        f"**• Is premium:** `{'Yes' if user.is_premium else 'No'}`"
     )
 
     results.append(inlineQueryMaker(f"❕ user.info({user.full_name})", user_info, description="See your info...!"))
@@ -150,13 +150,13 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     # base64 encode / decode
     try:
         b64_decode = b64decode(message).decode("utf-8")
-        results.append(inlineQueryMaker("📦 Base64: Decode (base64 to text)", f"<code>{b64_decode}</code>", description=b64_decode)) if b64_decode else None
+        results.append(inlineQueryMaker("📦 Base64: Decode (base64 to text)", f"`{b64_decode}`", description=b64_decode)) if b64_decode else None
     except:
         pass
 
     try:
         b64_encode = b64encode(message.encode("utf-8")).decode("utf-8")
-        results.append(inlineQueryMaker("📦 Base64: Encode (text to base64)", f"<code>{b64_encode}</code>", description=b64_encode)) if b64_encode else None
+        results.append(inlineQueryMaker("📦 Base64: Encode (text to base64)", f"`{b64_encode}`", description=b64_encode)) if b64_encode else None
     except:
         pass
 

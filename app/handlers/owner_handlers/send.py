@@ -1,22 +1,25 @@
-from telegram import Update, ReactionTypeEmoji
-from telegram.ext import ContextTypes
-from telegram.error import Forbidden
+from pyrogram import filters
+from pyrogram.types import Message
+from pyrogram.errors import Forbidden
+
+from app import bot
+from app.helpers.args_extractor import extract_cmd_args
 from app.utils.decorators.sudo_users import require_sudo
 from app.utils.decorators.pm_only import pm_only
 
+@bot.on_message(filters.command("tr", ["/", "!", "-", "."]))
 @pm_only
 @require_sudo
-async def func_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
-    user = update.effective_user
-    message = update.effective_message
+async def func_send(_, message: Message):
+    chat = message.chat
+    user = message.from_user
     re_msg = message.reply_to_message
-    context_args = " ".join(context.args) # contains something if forward is true and contains victim_id >> /send f chat_id
+    args = extract_cmd_args(message.text, message.command) # contains something if forward is true and contains victim_id >> /send f chat_id
     
-    if not context_args or not re_msg:
+    if not args or not re_msg:
         text = (
-            "Use <code>/send ChatID</code> by replying a message!\n"
-            "<code>/send f ChatID</code> to forward the replied message to ChatID!\n"
+            "Use `/send ChatID` by replying a message!\n"
+            "`/send f ChatID` to forward the replied message to ChatID!\n"
             "<blockquote expandable>Returns reaction on message\n"
             "- Sent: 👍\n"
             "- Forbidden: 👎\n"
@@ -26,10 +29,10 @@ async def func_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     forward_confirm = None
-    victim_id = context_args
+    victim_id = args
     reaction = "👍"
 
-    splited_text = context_args.split()
+    splited_text = args.split()
     if len(splited_text) == 2:
         forward_confirm, victim_id = splited_text
     

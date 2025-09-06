@@ -5,7 +5,7 @@ import pyzipper
 from time import time
 from app import logger
 
-class Utils:
+class UTILITY:
     @staticmethod
     def createProgressBar(percentValue, barSize=10) -> str:
         """

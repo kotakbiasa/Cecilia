@@ -8,8 +8,8 @@ from app.utils.decorators.pm_only import pm_only
 
 @pm_only
 @require_sudo
-async def func_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+async def func_broadcast(_, message: Message):
+    message = update.message
     re_msg = message.reply_to_message
     
     if not re_msg:

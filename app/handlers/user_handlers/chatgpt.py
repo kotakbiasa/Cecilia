@@ -1,19 +1,22 @@
 from time import time
-from telegram import Update
-from telegram.ext import ContextTypes
+
+from pyrogram import filters
+from pyrogram.types import Message
+
+from app import bot
+from app.helpers.args_extractor import extract_cmd_args
 from app.modules import llm
 
-async def func_gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    chat = update.effective_chat
-    effective_message = update.effective_message
-    prompt = " ".join(context.args)
+@bot.on_message(filters.command("gpt", ["/", "!", "-", "."]))
+async def func_gpt(_, message: Message):
+    user = message.from_user
+    prompt = extract_cmd_args(message.txt, message.command)
 
     if not prompt:
-        await effective_message.reply_text("Use <code>/gpt prompt</code>\nE.g. <code>/gpt what is relativity? explain in simple and short way.</code>")
+        await message.reply_text(f"Use `/{message.command[0]} prompt`\nE.g. `/{message.command[0]} what is relativity? explain in simple and short way.`")
         return
     
-    sent_message = await effective_message.reply_text("💭 Generating...")
+    sent_message = await message.reply_text("💭 Generating...")
     
     start_time = time()
     response = await llm.text_gen(prompt)
@@ -21,10 +24,10 @@ async def func_gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if response:
         text = (
-            f"<blockquote expandable>{user.mention_html()}: {prompt}</blockquote>\n"
-            f"<blockquote expandable><b>{context.bot.first_name}:</b> {response}</blockquote>\n"
-            f"<b>Process time:</b> <code>{response_time}s</code>\n"
-            f"<b>UserID:</b> <code>{user.id}</code>"
+            f"<blockquote expandable>{user.mention.HTML}: {prompt}</blockquote>\n"
+            f"<blockquote expandable>**{bot.me.first_name}:** {response}</blockquote>\n"
+            f"**Process time:** `{response_time}s`\n"
+            f"**UserID:** `{user.id}`"
         )
     else:
         text = "Oops! Something went wrong!"

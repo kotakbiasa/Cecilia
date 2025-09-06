@@ -1,52 +1,58 @@
-from telegram import Update
-from telegram.ext import ContextTypes, ConversationHandler
+from pyrogram import filters
+from pyrogram.types import Message
 
-from app import logger, config
+from app import bot, config, logger
 from app.utils.decorators.pm_only import pm_only
 from app.helpers import BuildKeyboard
+from app.utils.database import MemoryDB, DBConstants
 
-class SUPPORT_STATES:
-    STATE_ONE = range(1)
-
+@bot.on_message(filters.command("support", ["/", "!", "-", "."]))
 @pm_only
-async def init_support_conv(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    effective_message = update.effective_message
-    
-    text = (
+async def init_support_conv(_, message: Message):
+    await message.reply_text(
         "Hey, please send your request/report in one message.\n"
         "• /cancel to cancel conversation.\n\n"
-        "<blockquote><b>Note:</b> Request/Report should be related to this bot. And we don't provide any support for ban, mute or other things related to groups managed by this bot.</blockquote>"
+        "<blockquote>**Note:** Request/Report should be related to this bot. And we don't provide any support for ban, mute or other things related to groups managed by this bot.</blockquote>"
     )
 
-    await effective_message.reply_text(text)
-    return SUPPORT_STATES.STATE_ONE
+    MemoryDB.insert(DBConstants.DATA_CENTER, message.from_user.id, {"support_status": 1})
 
 
-async def support_state_one(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    effective_message = update.effective_message
+async def support_state_one(_, message: Message):
+    user = message.from_user
 
     try:
-        message = (
-            f"Name: {user.mention_html()}\n"
-            f"UserID: <code>{user.id}</code>\n"
-            f"Message: {effective_message.text_html}\n\n"
+        text = (
+            f"Name: {user.mention}\n"
+            f"UserID: `{user.id}`\n"
+            f"Message: {message.text.html}\n\n"
             "<i>Reply to this message to continue conversation! or use /send</i>\n"
             f"<tg-spoiler>#uid{hex(user.id)}</tg-spoiler>"
         )
 
         btn = BuildKeyboard.ubutton([{"User Profile": f"tg://user?id={user.id}"}]) if user.username else None
-        await context.bot.send_message(config.owner_id, message, reply_markup=btn)
+        await bot.send_message(config.owner_id, text, reply_markup=btn)
         # confirm message
         text = "Report has been submitted. Support team will contact you as soon as possible."
     except Exception as e:
         logger.error(e)
         text = "Oops, Something went wrong. Please try again."
 
-    await effective_message.reply_text(text)
-    return ConversationHandler.END
+    await message.reply_text(text)
+    MemoryDB.insert(DBConstants.DATA_CENTER, message.from_user.id, {"support_status": 0})
 
 
-async def cancel_support_conv(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.effective_message.reply_text("Okay, Reporting cancelled.")
-    return ConversationHandler.END
+@bot.on_message(filters.command("cancel", ["/", "!", "-", "."]))
+@pm_only
+async def cancel_support_conv(_, message: Message):
+    user_data = MemoryDB.data_center.get(message.from_user.id) or {}
+    support_status = user_data.get("support_status")
+
+    if not support_status:
+        text = "There is no active reporting conversation at the moment. /support to report/get support!"
+    else:
+        text = "Reporting has been cancelled."
+        # Cancel Reporting
+        MemoryDB.insert(DBConstants.DATA_CENTER, message.from_user.id, {"support_status": 0})
+
+    await message.reply_text(text)
