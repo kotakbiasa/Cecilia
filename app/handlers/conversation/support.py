@@ -2,9 +2,9 @@ from pyrogram import filters
 from pyrogram.types import Message
 
 from app import bot, config, logger
-from app.utils.decorators.pm_only import pm_only
 from app.helpers import BuildKeyboard
 from app.utils.database import MemoryDB, DBConstants
+from app.utils.decorators.pm_only import pm_only
 
 @bot.on_message(filters.command("support", ["/", "!", "-", "."]))
 @pm_only
@@ -19,7 +19,7 @@ async def init_support_conv(_, message: Message):
 
 
 async def support_state_one(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
 
     try:
         text = (

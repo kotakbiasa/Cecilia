@@ -7,11 +7,11 @@ from .auxiliary.chat_admins import ChatAdmins
 @pm_error
 async def func_kickme(_, message: Message):
     chat = message.chat
-    user = message.from_user
-    message = update.message
+    user = message.from_user or message.sender_chat
+    message = 
     
     chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, context.bot.id, user.id)
+    await chat_admins.fetch_admins(chat, bot.me.id, user.id)
     
     if (chat_admins.is_user_admin or chat_admins.is_user_owner):
         await message.reply_text("I'm not going to kick you! You must be kidding!")

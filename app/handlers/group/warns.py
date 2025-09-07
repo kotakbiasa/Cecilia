@@ -8,8 +8,8 @@ from .auxiliary.chat_admins import ChatAdmins
 @pm_error
 async def func_warns(_, message: Message):
     chat = message.chat
-    user = message.from_user
-    message = update.message
+    user = message.from_user or message.sender_chat
+    message = 
 
     chat_admins = ChatAdmins()
     await chat_admins.fetch_admins(chat, user_id=user.id)

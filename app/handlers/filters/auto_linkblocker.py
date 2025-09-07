@@ -4,8 +4,8 @@ from app.modules.base64 import BASE64
 
 async def autoLinkBlocker(message: Message, user: User, link_rules: dict):
     """
-    :param message: `update.message`
-    :param user: `update.effective_user`
+    :param message: Message Class
+    :param user: `message.from_user`
     :param link_rules: `dict` of link rules (database variables)
     """
     links_behave = link_rules.get("links_behave") # 3 values: delete; convert; None;

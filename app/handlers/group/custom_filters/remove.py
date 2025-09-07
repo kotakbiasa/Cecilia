@@ -9,8 +9,8 @@ from ..auxiliary.anonymous_admin import anonymousAdmin
 @pm_error
 async def func_remove(_, message: Message):
     chat = message.chat
-    user = message.from_user
-    message = update.message
+    user = message.from_user or message.sender_chat
+    message = 
     keyword = extract_cmd_args(message.text, message.command).lower()
     
     if user.is_bot:

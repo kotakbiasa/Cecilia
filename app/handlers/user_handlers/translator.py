@@ -11,7 +11,7 @@ from app.utils.database import DBConstants, database_search
 @bot.on_message(filters.command("tr", ["/", "!", "-", "."]))
 async def func_tr(_, message: Message):
     chat = message.chat
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     re_msg = message.reply_to_message
     text = (re_msg.text or re_msg.caption) if re_msg else None
     args = extract_cmd_args(message.text, message.command)

@@ -9,7 +9,7 @@ from app.utils.decorators.pm_only import pm_only
 @pm_only
 @require_sudo
 async def func_invitelink(_, message: Message):
-    message = update.message
+    message = 
     chat_id = extract_cmd_args(message.text, message.command)
     
     if not chat_id:

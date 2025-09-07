@@ -1,26 +1,26 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
 
+from app import bot
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MemoryDB
-from app.utils.decorators.sudo_users import require_sudo
 from app.utils.decorators.pm_only import pm_only
+from app.utils.decorators.sudo_users import require_sudo
 
+@bot.on_message(filters.command("broadcast", ["/", "!", "-", "."]))
 @pm_only
 @require_sudo
 async def func_broadcast(_, message: Message):
-    message = update.message
     re_msg = message.reply_to_message
-    
     if not re_msg:
         await message.reply_text("Reply a message to broadcast!")
         return
     
     # variables
-    broadcastText = re_msg.text_html # only if the message doesn't contain any video/doc or other things
-    broadcastCaption = re_msg.caption_html # message with video/audio/doc etc.
+    broadcastText = re_msg.text.html # only if the message doesn't contain any video/doc or other things
+    broadcastCaption = re_msg.caption.html # message with video/audio/doc etc.
 
-    broadcastPhoto = re_msg.photo[-1].file_id if re_msg.photo else None
+    broadcastPhoto = re_msg.photo.file_id if re_msg.photo else None
 
     broadcastDocument = re_msg.document.file_id if re_msg.document else None
     broadcastDocument_filename = re_msg.document.file_name if re_msg.document else None
@@ -35,7 +35,7 @@ async def func_broadcast(_, message: Message):
 
     broadcastButton = BuildKeyboard.cbutton([
         {"📩 Forward": "broadcast_value_forward", "📌 Pin": "broadcast_value_pin"},
-        {"✅ Send": "broadcast_send", "✖️ Close": "misc_close"}
+        {"✅ Send": "broadcast_send", "❌ Close": "misc_close"}
     ])
 
     broadcastData = {
@@ -58,19 +58,19 @@ async def func_broadcast(_, message: Message):
 
     MemoryDB.insert(DBConstants.DATA_CENTER, "broadcast", broadcastData)
 
-    # sening demo preview for owner/sudo
+    # sending demo preview for owner/sudo
     if broadcastText:
         await message.reply_text(text=broadcastText, reply_markup=broadcastButton)
     elif broadcastPhoto:
         await message.reply_photo(photo=broadcastPhoto, caption=broadcastCaption, reply_markup=broadcastButton)
     elif broadcastDocument:
-        await message.reply_document(document=broadcastDocument, caption=broadcastCaption, filename=broadcastCaption, reply_markup=broadcastButton)
+        await message.reply_document(document=broadcastDocument, caption=broadcastCaption, file_name=broadcastCaption, reply_markup=broadcastButton)
     elif broadcastVideo:
         await message.reply_video(video=broadcastVideo, caption=broadcastCaption, reply_markup=broadcastButton)
     elif broadcastVideo_note:
         await message.reply_video_note(video_note=broadcastVideo_note, reply_markup=broadcastButton)
     elif broadcastAudio:
-        await message.reply_audio(audio=broadcastAudio, title=broadcastAudio_filename, caption=broadcastCaption, filename=broadcastAudio_filename, reply_markup=broadcastButton)
+        await message.reply_audio(audio=broadcastAudio, title=broadcastAudio_filename, caption=broadcastCaption, file_name=broadcastAudio_filename, reply_markup=broadcastButton)
     elif broadcastVoice:
         await message.reply_voice(voice=broadcastVoice, caption=broadcastCaption, reply_markup=broadcastButton)
     else:

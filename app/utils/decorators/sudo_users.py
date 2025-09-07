@@ -9,7 +9,7 @@ def require_sudo(func):
     """
     @wraps(func)
     async def wraper(_, message: Message):
-        user = message.from_user
+        user = message.from_user or message.sender_chat
         owner_id = config.owner_id
         sudo_users = MemoryDB.bot_data.get("sudo_users") or []
 

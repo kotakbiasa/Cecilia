@@ -8,9 +8,9 @@ from app.helpers import BuildKeyboard
 
 @pm_error
 async def func_whisper(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     chat = message.chat
-    message = update.message
+    message = 
     re_msg = message.reply_to_message
     secret_message = extract_cmd_args(message.text, message.command)
     

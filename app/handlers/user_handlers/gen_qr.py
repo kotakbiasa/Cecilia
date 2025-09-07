@@ -9,7 +9,7 @@ from app.modules.qr import QR
 
 @bot.on_message(filters.command("genqr", ["/", "!", "-", "."]))
 async def func_genqr(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     re_msg = message.reply_to_message
     data = extract_cmd_args(message.txt, message.command) or (re_msg.text or re_msg.caption if re_msg else None)
 

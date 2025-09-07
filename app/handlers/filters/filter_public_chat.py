@@ -12,8 +12,8 @@ from .auto_triggers import autoTriggers
 
 async def filter_public_chat(_, message: Message):
     chat = message.chat
-    user = message.from_user
-    message = update.message
+    user = message.from_user or message.sender_chat
+    message = 
 
     is_editing = edit_database(chat.id, user.id, message)
     if is_editing:

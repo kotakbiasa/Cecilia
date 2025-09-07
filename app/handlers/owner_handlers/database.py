@@ -1,18 +1,21 @@
 import json
 from io import BytesIO
 
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
 
-from app.utils.database import DBConstants, MongoDB
+from app import bot
 from app.helpers import BuildKeyboard
-from app.utils.decorators.sudo_users import require_sudo
+from app.helpers.args_extractor import extract_cmd_args
+from app.utils.database import DBConstants, MongoDB
 from app.utils.decorators.pm_only import pm_only
+from app.utils.decorators.sudo_users import require_sudo
 
+@bot.on_message(filters.command(["database", "db"], ["/", "!", "-", "."]))
 @pm_only
 @require_sudo
 async def func_database(_, message: Message):
-    message = update.message
+    # CHAT/USER ID // not username
     victim_id = extract_cmd_args(message.text, message.command)
     
     if not victim_id:
@@ -31,14 +34,12 @@ async def func_database(_, message: Message):
         active_users = active_status.count(True)
         inactive_users = active_status.count(False)
 
-        text = (
+        await message.reply_text(
             f"{msg_storage}" # already has 2 escapes
             f"**• Active users:** `{active_users}`\n"
             f"**• Inactive users:** `{inactive_users}`\n\n"
-            f"<blockquote>**Note:** `/database ChatID` to get specific chat database information.</blockquote>"
+            f"<blockquote>**Note:** `/{message.command[0]} ChatID` to get specific chat database information.</blockquote>"
         )
-
-        await message.reply_text(text)
         return
     
     try:
@@ -46,8 +47,7 @@ async def func_database(_, message: Message):
     except ValueError:
         await message.reply_text("Invalid ChatID!")
         return
-
-    # if chat_id given
+    
     if "-100" in str(victim_id):
         chat_data = MongoDB.find_one(DBConstants.CHATS_DATA, "chat_id", victim_id) # victim_id as int
         if not chat_data:
@@ -55,7 +55,7 @@ async def func_database(_, message: Message):
             return
         
         try:
-            victim_info = await context.bot.get_chat(victim_id)
+            victim_info = await bot.get_chat(victim_id)
         except:
             victim_info = None
             btn = None
@@ -69,14 +69,14 @@ async def func_database(_, message: Message):
             f"• Title: {chat_title}\n"
             f"• ID: `{victim_id}`\n\n"
 
-            f"• Language: `{chat_data.get('lang')}`\n"
-            f"• Auto translate: `{chat_data.get('auto_tr') or False}`\n"
-            f"• Echo: `{chat_data.get('echo') or False}`\n"
-            f"• Antibot: `{chat_data.get('antibot') or False}`\n"
-            f"• Welcome Members: `{chat_data.get('welcome_user') or False}`\n"
-            f"• Farewell Members: `{chat_data.get('farewell_user') or False}`\n"
+            f"• Language: `{chat_data.get('lang') or '-'}`\n"
+            f"• Auto translate: `{'Enabled' if chat_data.get('auto_tr') else 'Disabled'}`\n"
+            f"• Echo: `{'Enabled' if chat_data.get('echo') else 'Disabled'}`\n"
+            f"• Antibot: `{'Enabled' if chat_data.get('antibot') else 'Disabled'}`\n"
+            f"• Welcome Members: `{'Enabled' if chat_data.get('welcome_user') else 'Disabled'}`\n"
+            f"• Farewell Members: `{'Enabled' if chat_data.get('farewell_user') else 'Disabled'}`\n"
             f"• Join Request: `{chat_data.get('chat_join_req')}`\n"
-            f"• Service Messages: `{chat_data.get('service_messages')}`\n"
+            f"• Service Messages: `{'Enabled' if chat_data.get('service_messages') else 'Disabled'}`\n"
             f"• Links Behave: `{chat_data.get('links_behave')}`\n"
             f"• Allowed Links: `{', '.join(chat_data.get('allowed_links') or [])}`"
         )
@@ -93,9 +93,9 @@ async def func_database(_, message: Message):
         chat_filters = chat_data.get('filters')
         if chat_filters:
             filters_file = BytesIO(json.dumps(chat_filters, indent=4).encode())
-            filters_file.name = f"filters_{victim_id}.json"
+            filters_file.name = f"filters [{victim_id}].json"
 
-            await message.reply_document(filters_file, f"ChatID: `{victim_id}`")
+            await message.reply_document(filters_file, caption=f"ChatID: `{victim_id}`")
     
     else:
         user_data = MongoDB.find_one(DBConstants.USERS_DATA, "user_id", victim_id) # victim_id as int
@@ -104,14 +104,14 @@ async def func_database(_, message: Message):
             return
         
         try:
-            victim_info = await context.bot.get_chat(victim_id)
+            victim_info = await bot.get_users(victim_id)
         except:
             victim_info = None
             btn = None
         
         try:
             victim_name = victim_info.mention.HTML if victim_info else user_data.get('mention')
-        except: # TypeError
+        except: # TypeError ?
             victim_name = user_data.get('mention')
         
         victim_username = victim_info.username if victim_info else user_data.get('username')
@@ -122,9 +122,9 @@ async def func_database(_, message: Message):
             f"• ID: `{victim_id}`\n"
             f"• Username: @{victim_username or 'username'}\n\n"
 
-            f"• Language: `{user_data.get('lang')}`\n"
-            f"• Auto translate: `{user_data.get('auto_tr') or False}`\n"
-            f"• Echo: `{user_data.get('echo') or False}`\n\n"
+            f"• Language: `{user_data.get('lang') or '-'}`\n"
+            f"• Auto translate: `{'Enabled' if user_data.get('auto_tr') else 'Disabled'}`\n"
+            f"• Echo: `{'Enabled' if user_data.get('echo') else 'Disabled'}`\n\n"
 
             f"• Active status: `{user_data.get('active_status')}`"
         )

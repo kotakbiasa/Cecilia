@@ -1,27 +1,29 @@
 import psutil
-import aiohttp
 from time import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
 
-from app import BOT_UPTIME
+from app import bot, BOT_UPTIME
 from app.utils.database import MemoryDB
 from app.modules.utils import UTILITY
 from app.utils.decorators.sudo_users import require_sudo
 
+@bot.on_message(filters.command("sys", ["/", "!", "-", "."]))
 @require_sudo
 async def func_sys(_, message: Message):
-    sent_message = await update.message.reply_text("⌛")
+    # Loading Sticker ID
+    sent_message = await message.reply_sticker("CAACAgUAAxkBAAEM96JovVa1TPS6ytZFdDe2W2XCNPV8vgADEQACtxIQVjlyOTplekF7NgQ")
     
-    # Uptime Calculating
-    sys_uptime = timedelta(seconds=datetime.now().timestamp() - psutil.boot_time())
+    # Systen Uptime Calculating
+    sys_uptime = timedelta(seconds=time() - psutil.boot_time())
 
     sys_days = sys_uptime.days
     sys_hours, remainder = divmod(sys_uptime.seconds, 3600)
     sys_minute = remainder / 60
 
+    # Bot Uptime Calculating
     bot_uptime = timedelta(seconds=time() - BOT_UPTIME)
     
     bot_days = bot_uptime.days
@@ -90,4 +92,5 @@ async def func_sys(_, message: Message):
         f"**└ Telegram:** `{tg_server_ping}`"
     )
 
-    await sent_message.edit_text(sys_info)
+    await sent_message.delete()
+    await message.reply_text(sys_info)

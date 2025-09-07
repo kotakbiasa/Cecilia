@@ -5,7 +5,7 @@ from app.utils.decorators.pm_error import pm_error
 @pm_error
 async def func_adminlist(_, message: Message):
     chat = message.chat
-    message = update.message
+    message = 
 
     owner = "**Owner:**\n"
     admins = ""

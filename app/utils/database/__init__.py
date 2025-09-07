@@ -43,7 +43,7 @@ def database_search(collection_name, search_key, match_value):
 def database_add_user(user):
     """
     ***Checks Memory for `users_data` if not found then checks on MongoDB & updates `users_data` to Memory & MongoDB***\n
-    :param user: `update.effective_user`
+    :param user: `message.from_user`
     """
     user_data = MemoryDB.users_data.get(user.id)
     if user_data:

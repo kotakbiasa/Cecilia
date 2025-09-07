@@ -6,7 +6,7 @@ from app import bot
 @bot.on_message(filters.command("id", ["/", "!", "-", "."]))
 async def func_id(_, message: Message):
     chat = message.chat
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     re_msg = message.reply_to_message
     victim = None
 

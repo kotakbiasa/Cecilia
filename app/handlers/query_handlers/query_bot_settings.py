@@ -10,7 +10,7 @@ from app.utils.database import DBConstants, MemoryDB, MongoDB
 from ..owner_handlers.bsettings import BotSettingsData
 
 async def query_bot_settings(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     query = update.callback_query
 
     # refined query data

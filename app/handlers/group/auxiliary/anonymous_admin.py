@@ -4,10 +4,10 @@ from app.utils.database import DBConstants, MemoryDB
 
 async def anonymousAdmin(chat, message, timeout=10):
     """
-    :param chat: `update.effective_chat`
-    :param message: `update.message`
+    :param chat: `message.chat`
+    :param message: Message class
     :param timeout: waiting time in sec
-    :returns User: `telegram.User`
+    :returns User: User class
     """
     anonymous_admin = None
     MemoryDB.insert(DBConstants.DATA_CENTER, chat.id, {"anonymous_admin": None})

@@ -1,18 +1,17 @@
-from telegram import Update, ChatMember
-from telegram.ext import ContextTypes
-from telegram.constants import ChatType
+from pyrogram import filters
+from pyrogram.types import ChatMemberUpdated
+from pyrogram.enums import ChatType, ChatMemberStatus
+
+from app import bot
 from app.utils.database import DBConstants, MemoryDB, MongoDB
 
-async def bot_chats_tracker(_, message: Message):
-    """
-    **Tracks Groups/Private chat (where bot is added/removed/promoted/demoted)**
-    """
-    chat = message.chat
-    chat_update = update.my_chat_member
-
-    user = chat_update.from_user
-    old_status = chat_update.old_chat_member.status
-    new_status = chat_update.new_chat_member.status
+@bot.on_chat_member_updated(filters.me)
+async def bot_chats_tracker(_, member_update: ChatMemberUpdated):
+    """**Tracks GROUP/PRIVATE chat (where bot is added/removed/promoted/demoted)**"""
+    chat = member_update.chat
+    user = member_update.from_user
+    old_status = member_update.old_chat_member.status
+    new_status = member_update.new_chat_member.status
     text = None
 
     if chat.type in [ChatType.PRIVATE]:
@@ -30,7 +29,7 @@ async def bot_chats_tracker(_, message: Message):
             MemoryDB.insert(DBConstants.USERS_DATA, user.id, data)
         
         # checking member status & updating database
-        active_status = new_status == ChatMember.MEMBER
+        active_status = new_status == ChatMemberStatus.MEMBER
         MongoDB.update(DBConstants.USERS_DATA, "user_id", user.id, {"active_status": active_status})
     
     elif chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
@@ -45,7 +44,7 @@ async def bot_chats_tracker(_, message: Message):
             MongoDB.insert(DBConstants.CHATS_DATA, data)
             MemoryDB.insert(DBConstants.CHATS_DATA, chat.id, data)
         
-        if old_status in [ChatMember.LEFT, ChatMember.BANNED] and new_status == ChatMember.MEMBER:
+        if old_status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED] and new_status == ChatMemberStatus.MEMBER:
             text = (
                 "Thanks for adding me in this nice chat!\n"
                 "Please make me admin in chat, so I can help you managing this chat effectively!\n"
@@ -53,21 +52,20 @@ async def bot_chats_tracker(_, message: Message):
             )
         
         # promotion
-        elif old_status != ChatMember.ADMINISTRATOR and new_status == ChatMember.ADMINISTRATOR:
+        elif old_status != ChatMemberStatus.ADMINISTRATOR and new_status == ChatMemberStatus.ADMINISTRATOR:
             text = (
                 "Thanks for adding me as an admin!\n"
                 "Don't forget to checkout /help section..."
             )
         
         # demotion
-        elif old_status == ChatMember.ADMINISTRATOR and new_status == ChatMember.MEMBER:
+        elif old_status == ChatMemberStatus.ADMINISTRATOR and new_status == ChatMemberStatus.MEMBER:
             text = (
                 "Ohh dear, have I done something wrong!\n"
                 "I wish I could help..."
             )
         
-        if text:
-            await chat.send_message(text)
+        if text: await bot.send_message(chat.id, text)
     
-    elif chat.type in [ChatType.CHANNEL] and new_status == ChatMember.ADMINISTRATOR:
-        await user.send_message(f"You have added me in {chat.title}\nChatID: `{chat.id}`")
+    elif chat.type in [ChatType.CHANNEL] and new_status == ChatMemberStatus.ADMINISTRATOR:
+        await bot.send_message(user.id, f"You have added me in {chat.title}\nChatID: `{chat.id}`")

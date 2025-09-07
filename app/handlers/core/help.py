@@ -26,14 +26,14 @@ class HelpMenuData:
     ]
 
 
-@bot.on_message(filters.command("help", ["/", "!", "-", "."]) | filters.regex("help"))
+@bot.on_message(filters.command("help", ["/", "!", "-", "."]) | filters.regex("^/start help$"))
 async def func_help(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     chat = message.chat
 
     if chat.type not in [ChatType.PRIVATE]:
         btn = BuildKeyboard.ubutton([{"Click here for help": f"http://t.me/{bot.me.username}?start=help"}])
-        await message.reply_text(f"Hey, {user.first_name}\nContact me in PM for help!", reply_markup=btn)
+        await message.reply_text(f"Hey, {user.first_name or user.title}\nContact me in PM for help!", reply_markup=btn)
         return
     
     # database entry checking if user is registered.

@@ -40,7 +40,7 @@ class GroupChatSettingsData:
 async def func_chat_settings(_, message: Message):
     """This function won't be in handler, instead it will be called in func_settings if chat.type isn't private"""
     chat = message.chat
-    user = message.from_user
+    user = message.from_user or message.sender_chat
 
     if user.is_bot:
         user = await anonymousAdmin(chat, message)
@@ -48,7 +48,7 @@ async def func_chat_settings(_, message: Message):
             return
     
     chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, context.bot.id, user.id)
+    await chat_admins.fetch_admins(chat, bot.me.id, user.id)
     
     if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
         await message.reply_text("You aren't an admin in this chat!")

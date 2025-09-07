@@ -9,8 +9,8 @@ from .auxiliary.anonymous_admin import anonymousAdmin
 @pm_error
 async def func_leave(_, message: Message):
     chat = message.chat
-    user = message.from_user
-    message = update.message
+    user = message.from_user or message.sender_chat
+    message = 
     
     if user.is_bot:
         user = await anonymousAdmin(chat, message)

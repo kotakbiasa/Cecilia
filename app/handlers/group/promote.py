@@ -8,8 +8,8 @@ from .auxiliary.anonymous_admin import anonymousAdmin
 @pm_error
 async def func_promote(_, message: Message):
     chat = message.chat
-    user = message.from_user
-    message = update.message
+    user = message.from_user or message.sender_chat
+    message = 
     re_msg = message.reply_to_message
     victim = re_msg.from_user if re_msg else None
     admintitle = extract_cmd_args(message.text, message.command)
@@ -33,12 +33,12 @@ async def func_promote(_, message: Message):
         await message.reply_text("I don't know who you are talking about! Reply the member whom you want to promote!\nE.g`/promote admin title`")
         return
     
-    if victim.id == context.bot.id:
+    if victim.id == bot.me.id:
         await message.reply_text("I wish I could promote myself!")
         return
     
     chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, context.bot.id, user.id, victim.id)
+    await chat_admins.fetch_admins(chat, bot.me.id, user.id, victim.id)
     
     if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
         await message.reply_text("You aren't an admin in this chat!")

@@ -7,14 +7,14 @@ from app import bot, logger, ORIGINAL_BOT_USERNAME, ORIGINAL_BOT_ID
 from app.helpers import BuildKeyboard
 from app.utils.database import MemoryDB, database_add_user
 
-@bot.on_message(filters.command("start", ["/", "!", "-", "."]))
+@bot.on_message(filters.command("start", ["/", "!", "-", "."]) & ~filters.regex("help"))
 async def func_start(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     chat = message.chat
 
     if chat.type not in [ChatType.PRIVATE]:
         btn = BuildKeyboard.ubutton([{"Start me in PM": f"http://t.me/{bot.me.username}?start=start"}])
-        await message.reply_text(f"Hey, {user.first_name}\nStart me in PM!", reply_markup=btn)
+        await message.reply_text(f"Hey, {user.first_name or user.title}\nStart me in PM!", reply_markup=btn)
         return
     
     # database entry checking if user is registered.
@@ -32,7 +32,7 @@ async def func_start(_, message: Message):
             pass
 
     text = (
-        f"Hey, {user.first_name}! I'm {bot.me.first_name}!\n\n"
+        f"Hey, {user.first_name or user.title}! I'm {bot.me.first_name}!\n\n"
         "I can help you to manage your chat with a lots of useful features!\n"
         "Feel free to add me to your chat.\n\n"
         "• /help - Get bot help menu\n\n"

@@ -10,7 +10,7 @@ from ..group.chat_settings import GroupChatSettingsData
 
 async def query_chat_settings(_, message: Message):
     chat = message.chat
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     query = update.callback_query
 
     # refined query data

@@ -7,7 +7,7 @@ from app.helpers import BuildKeyboard
 
 @bot.on_message(filters.command("info", ["/", "!", "-", "."]))
 async def func_info(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     re_msg = message.reply_to_message
     victim = user
 

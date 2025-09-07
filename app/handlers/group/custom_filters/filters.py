@@ -7,7 +7,7 @@ from app.utils.decorators.pm_error import pm_error
 @pm_error
 async def func_filters(_, message: Message):
     chat = message.chat
-    message = update.message
+    message = 
     
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:

@@ -2,9 +2,9 @@ from telegram import Message, User, Chat
 
 async def autoTriggers(message: Message, user: User, chat: Chat, filters: dict):
     """
-    :param message: `update.message`
-    :param user: `update.effective_user`
-    :param chat: `update.effective_chat`
+    :param message: Message Class
+    :param user: `message.from_user`
+    :param chat: `message.chat`
     :param filters: chat filters (from chat database)
     """
     text = message.text or message.caption
@@ -19,7 +19,7 @@ async def autoTriggers(message: Message, user: User, chat: Chat, filters: dict):
             filtered_text = filters.get(keyword)
 
             formattings = {
-                "{first}": user.first_name,
+                "{first}": user.first_name or user.title,
                 "{last}": user.last_name or "",
                 "{fullname}": user.full_name,
                 "{username}": user.name,

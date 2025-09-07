@@ -11,8 +11,8 @@ from .auto_translate import autoTranslate
 
 async def filter_private_chat(_, message: Message):
     chat = message.chat
-    user = message.from_user
-    message = update.message
+    user = message.from_user or message.sender_chat
+    message = 
     re_msg = message.reply_to_message
 
     

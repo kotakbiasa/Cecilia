@@ -8,8 +8,8 @@ from .auxiliary.anonymous_admin import anonymousAdmin
 @pm_error
 async def func_purge(_, message: Message):
     chat = message.chat
-    user = message.from_user
-    message = update.message
+    user = message.from_user or message.sender_chat
+    message = 
     re_msg = message.reply_to_message
 
     cmd_prefix = message.text[1]
@@ -32,7 +32,7 @@ async def func_purge(_, message: Message):
         return
     
     chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, context.bot.id, user.id)
+    await chat_admins.fetch_admins(chat, bot.me.id, user.id)
     
     if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
         await message.reply_text("You aren't an admin in this chat!")

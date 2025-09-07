@@ -148,6 +148,7 @@ async def server_alive():
 
 from .handlers.core.start import *
 from .handlers.core.help import *
+from .handlers.owner_handlers.sys import *
 
 # def load_handlers():
 #     handlers_dir = "app/handlers"

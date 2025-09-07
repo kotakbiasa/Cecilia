@@ -5,7 +5,7 @@ from app.handlers.group.auxiliary.chat_admins import ChatAdmins
 
 async def query_groupManagement(_, message: Message):
     chat = message.chat
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     query = update.callback_query
 
     # refined query data

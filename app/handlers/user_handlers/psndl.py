@@ -8,7 +8,7 @@ from app.modules import telegraph
 
 @bot.on_message(filters.command("psndl", ["/", "!", "-", "."]))
 async def func_psndl(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     game_name = extract_cmd_args(message.text, message.command)
 
     if not game_name:

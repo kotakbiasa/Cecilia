@@ -8,7 +8,7 @@ from app.modules.qr import QR
 
 @bot.on_message(filters.command("decqr", ["/", "!", "-", "."]))
 async def func_decqr(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     re_msg = message.reply_to_message
 
     if not re_msg or not (re_msg.photo or re_msg.document):

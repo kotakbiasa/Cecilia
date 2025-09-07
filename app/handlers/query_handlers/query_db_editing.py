@@ -12,7 +12,7 @@ async def query_db_editing(_, message: Message):
     `rm_value`: Sets `update_data_value` as None
     """
     chat = message.chat
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     query = update.callback_query
 
     # refined query data

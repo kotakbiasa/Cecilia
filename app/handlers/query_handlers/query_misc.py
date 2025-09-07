@@ -6,7 +6,7 @@ from app.utils.database import DBConstants, MemoryDB, MongoDB, database_search
 
 async def query_misc(_, message: Message):
     chat = message.chat
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     query = update.callback_query
 
     # refined query data

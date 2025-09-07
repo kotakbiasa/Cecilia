@@ -3,7 +3,7 @@ import json
 import shutil
 from time import time
 
-from pyrogram import Client, __version__ as __pyroversion__
+from pyrogram import Client, __version__ as __pyroVersion__
 from pyrogram.types import LinkPreviewOptions
 from pyrogram.enums import ClientPlatform
 
@@ -45,7 +45,7 @@ bot = Client(
     name=ORIGINAL_BOT_USERNAME,
     api_id=config.api_id,
     api_hash=config.api_hash,
-    app_version=f"{__pyroversion__} x64",
+    app_version=f"{__pyroVersion__} x64",
     device_model="Desktop",
     system_version="Windows 11 x64",
     bot_token=config.bot_token,
@@ -63,6 +63,6 @@ Developed by
   \/_____/   \/_/   \/_____/   \/_/\/_/   \/_/\/_/   \/_____/ 
    
     Version: {__version__}
-    Library: kurigram {__pyroversion__}
+    Library: kurigram {__pyroVersion__}
     GitHub: https://github.com/bishalqx980
 """)

@@ -1,8 +1,8 @@
 import random
 import string
-import aiohttp
 import pyzipper
 from time import time
+from aiohttp import ClientSession, ClientTimeout
 from app import logger
 
 class UTILITY:
@@ -47,12 +47,12 @@ class UTILITY:
     
 
     @staticmethod
-    async def pingServer(url) -> str:
+    async def pingServer(url, timeout=5) -> str:
         """:return str: Server `response time` or `infinite`"""
         try:
             start_time = time()
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
+            async with ClientSession() as session:
+                async with session.get(url, timeout=ClientTimeout(timeout)) as response:
                     response_time = int((time() - start_time) * 1000) # converting to ms
                     if response_time > 1000:
                         server_ping = f"{(response_time / 1000):.2f}s"

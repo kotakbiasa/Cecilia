@@ -1,14 +1,14 @@
 import random
 
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.error import BadRequest
+from pyrogram import filters
+from pyrogram.types import Message
+from pyrogram.errors import BadRequest
 
-from app import logger
+from app import bot, logger
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MemoryDB
-from app.utils.decorators.sudo_users import require_sudo
 from app.utils.decorators.pm_only import pm_only
+from app.utils.decorators.sudo_users import require_sudo
 
 class BotSettingsData:
     TEXT = (
@@ -31,12 +31,12 @@ class BotSettingsData:
         {"> ⁅ Database ⁆": "bsettings_database", "Close": "misc_close"}
     ]
 
+@bot.on_message(filters.command("bsettings", ["/", "!", "-", "."]))
 @pm_only
 @require_sudo
 async def func_bsettings(_, message: Message):
     user = message.from_user
-    message = update.message
-    
+
     # requied data needed for editing
     data = {
         "user_id": user.id, # authorization
@@ -72,14 +72,14 @@ async def func_bsettings(_, message: Message):
         photo = random.choice(images).strip()
     elif show_bot_pic:
         try:
-            bot_photos = await bot.get_user_profile_photos(bot.me.id)
-            photo_file_id = bot_photos.photos[0][-1].file_id # the high quality photo file_id
+            async for bp in bot.get_chat_photos("me", 1):
+                photo_file_id = bp.file_id # the high quality photo file_id
         except:
             pass
     
     if photo or photo_file_id:
         try:
-            await message.reply_photo(photo or photo_file_id, text, reply_markup=btn, protect_content=True)
+            await message.reply_photo(photo or photo_file_id, caption=text, reply_markup=btn)
             return
         except BadRequest:
             pass
@@ -87,4 +87,4 @@ async def func_bsettings(_, message: Message):
             logger.error(e)
     
     # if BadRequest or No Photo or Other error
-    await message.reply_text(text, reply_markup=btn, protect_content=True)
+    await message.reply_text(text, reply_markup=btn)

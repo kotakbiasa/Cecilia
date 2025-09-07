@@ -9,7 +9,7 @@ from app.modules import llm
 
 @bot.on_message(filters.command("imagine", ["/", "!", "-", "."]))
 async def func_imagine(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     prompt = extract_cmd_args(message.text, message.command)
 
     if not prompt:

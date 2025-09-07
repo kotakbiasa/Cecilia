@@ -9,7 +9,7 @@ from app.modules import llm
 
 @bot.on_message(filters.command("gpt", ["/", "!", "-", "."]))
 async def func_gpt(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     prompt = extract_cmd_args(message.txt, message.command)
 
     if not prompt:

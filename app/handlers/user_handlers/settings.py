@@ -25,7 +25,7 @@ class PvtChatSettingsData:
 
 @bot.on_message(filters.command("settings", ["/", "!", "-", "."]) & filters.private)
 async def func_settings(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
 
     data = {
         "user_id": user.id, # authorization

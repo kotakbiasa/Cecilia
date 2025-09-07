@@ -10,7 +10,7 @@ from app.utils.database import DBConstants, MongoDB
 from ..core.help import HelpMenuData
 
 async def query_help_menu(_, message: Message):
-    user = message.from_user
+    user = message.from_user or message.sender_chat
     query = update.callback_query
 
     # refined query data
@@ -169,7 +169,7 @@ async def query_help_menu(_, message: Message):
             "<blockquote>`**» bot.info()**`</blockquote>\n\n"
 
             f"**• Name:** {context.bot.first_name}\n"
-            f"**• ID:** `{context.bot.id}`\n"
+            f"**• ID:** `{bot.me.id}`\n"
             f"**• Username:** {context.bot.name}\n\n"
 
             f"**• Registered users:** `{t_users_count}`\n"

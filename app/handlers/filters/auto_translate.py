@@ -5,8 +5,8 @@ from app.modules.translator import translate
 
 async def autoTranslate(message: Message, user: User, lang_code: str):
     """
-    :param message: `update.message`
-    :param user: `update.effective_user`
+    :param message: Message Class
+    :param user: `message.from_user`
     :param lang_code: Get from user/chat database
     """
     text = message.text or message.caption

@@ -135,7 +135,7 @@ async def inline_query_handler(_, message: Message):
         "<blockquote>`» user.info()`</blockquote>\n\n"
         
         f"**• Full name:** `{user.full_name}`\n"
-        f"**  » First name:** `{user.first_name}`\n"
+        f"**  » First name:** `{user.first_name or user.title}`\n"
         f"**  » Last name:** `{user.last_name}`\n"
         f"**• Mention:** {user.mention.HTML}\n"
         f"**• Username:** {user.name if user.username else ''}\n"

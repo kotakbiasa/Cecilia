@@ -2,21 +2,23 @@ import subprocess
 from io import BytesIO
 from time import time
 
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
 
-from app.utils.decorators.sudo_users import require_sudo
+from app import bot
+from app.helpers.args_extractor import extract_cmd_args
 from app.utils.decorators.pm_only import pm_only
+from app.utils.decorators.sudo_users import require_sudo
 
+@bot.on_message(filters.command("shell", ["/", "!", "-", "."]))
 @pm_only
 @require_sudo
 async def func_shell(_, message: Message):
     chat = message.chat
-    message = update.message
     command = extract_cmd_args(message.text, message.command).replace("'", "")
     
     if not command:
-        await message.reply_text("Use `/shell dir/ls` [linux/Windows Depend on your hosting server]")
+        await message.reply_text(f"Use `/{message.command[0]} dir/ls` [linux/Windows Depend on your hosting server]")
         return
     
     sent_message = await message.reply_text("**⌊ please wait... ⌉**")
