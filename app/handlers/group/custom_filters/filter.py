@@ -1,19 +1,22 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
 
+from app import bot
+from app.helpers import BuildKeyboard
+from app.helpers.args_extractor import extract_cmd_args
 from app.utils.decorators.pm_error import pm_error
 from app.utils.database import DBConstants, MemoryDB, MongoDB, database_search
-from app.helpers import BuildKeyboard
+
 from ..auxiliary.chat_admins import ChatAdmins
 from ..auxiliary.anonymous_admin import anonymousAdmin
 
+@bot.on_message(filters.command("filter", ["/", "!", "-", "."]))
 @pm_error
 async def func_filter(_, message: Message):
     chat = message.chat
     user = message.from_user or message.sender_chat
-    message = 
     re_msg = message.reply_to_message
-    value = re_msg.text_html or re_msg.caption if re_msg else None
+    value = re_msg.text.html or re_msg.caption.html if re_msg else None
     keyword = extract_cmd_args(message.text, message.command).lower()
     
     if user.is_bot:
@@ -21,14 +24,14 @@ async def func_filter(_, message: Message):
         if not user:
             return
     
-    chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, user_id=user.id)
     
-    if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
+    await chat_admins.fetch_admins( user_id=user.id)
+    
+    if not (admin_roles["user_admin"] or admin_roles["user_owner"]):
         await message.reply_text("You aren't an admin in this chat!")
         return
     
-    if chat_admins.is_user_admin and not chat_admins.is_user_admin.can_change_info:
+    if admin_roles["user_admin"] and not admin_roles["user_admin"].privileges.can_change_info:
         await message.reply_text("You don't have enough permission to manage this chat!")
         return
     
@@ -43,10 +46,10 @@ async def func_filter(_, message: Message):
 
         text = (
             "To set filters for this chat follow the instruction below...\n"
-            "<blockquote>Reply the message with /filter which one you want to set as value for your keyword!</blockquote>"
-            "Example: `/filter hi` send this by replying any message! suppose the message is `Hi, How are you!`\n"
+            f"<blockquote>Reply the message with /{message.command[0]} which one you want to set as value for your keyword!</blockquote>"
+            f"Example: `/{message.command[0]} hi` send this by replying any message! suppose the message is `Hi, How are you!`\n"
             "Next time if you say `Hi` in chat, the bot will reply with `Hi, How are you!`\n\n"
-            "<i>**Note:** Use comma for adding multiple filter. eg. `/filter hi, bye`</i>\n\n"
+            f"<i>**Note:** Use comma for adding multiple filter. eg. `/{message.command[0]} hi, bye`</i>\n\n"
             "<i>Ques: How to remove a filter?\n Ans: /remove for instruction...</i>\n\n"
             "**<u>Text formatting</u>**\n"
             "`{first}` first name\n"

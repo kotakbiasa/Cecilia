@@ -42,7 +42,7 @@ async def func_settings(_, message: Message):
         return
     
     text = PvtChatSettingsData.TEXT.format(
-        user.mention.HTML,
+        user.mention,
         user.id,
         user_data.get('lang') or '-',
         'Enabled' if user_data.get('auto_tr') else 'Disabled',

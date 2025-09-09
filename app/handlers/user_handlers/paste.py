@@ -9,7 +9,7 @@ from app.modules import telegraph
 async def func_paste(_, message: Message):
     user = message.from_user or message.sender_chat
     re_msg = message.reply_to_message
-    text = (re_msg.text_html or re_msg.caption_html) if re_msg else extract_cmd_args(message.text, message.command)
+    text = (re_msg.text.html or re_msg.caption_html) if re_msg else extract_cmd_args(message.text, message.command)
 
     if not text:
         await message.reply_text(f"Use `/{message.command[0]} text` or reply the message/text with `/{message.command[0]}` command.")

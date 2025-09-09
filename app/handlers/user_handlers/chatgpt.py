@@ -24,7 +24,7 @@ async def func_gpt(_, message: Message):
 
     if response:
         text = (
-            f"<blockquote expandable>{user.mention.HTML}: {prompt}</blockquote>\n"
+            f"<blockquote expandable>{user.mention}: {prompt}</blockquote>\n"
             f"<blockquote expandable>**{bot.me.first_name}:** {response}</blockquote>\n"
             f"**Process time:** `{response_time}s`\n"
             f"**UserID:** `{user.id}`"

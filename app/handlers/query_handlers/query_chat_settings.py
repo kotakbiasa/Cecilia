@@ -22,7 +22,7 @@ async def query_chat_settings(_, message: Message):
         await query.answer("Session Expired.", True)
         try:
             message_id = query.message.message_id
-            await chat.delete_messages([message_id, message_id - 1])
+            await bot.delete_messages([message_id, message_id - 1])
         except:
             try:
                 await query.delete_message()
@@ -48,7 +48,7 @@ async def query_chat_settings(_, message: Message):
         # Handling PRIVATE chat setting
         if chat.type in [ChatType.PRIVATE]:
             text = PvtChatSettingsData.TEXT.format(
-                user.mention.HTML,
+                user.mention,
                 user.id,
                 memory_data.get('lang') or '-',
                 'Enabled' if memory_data.get('auto_tr') else 'Disabled',
@@ -301,7 +301,7 @@ async def query_chat_settings(_, message: Message):
     elif query_data == "close":
         try:
             message_id = query.message.message_id
-            await chat.delete_messages([message_id, message_id - 1])
+            await bot.delete_messages([message_id, message_id - 1])
         except:
             try:
                 await query.delete_message()

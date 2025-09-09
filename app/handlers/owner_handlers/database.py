@@ -110,7 +110,7 @@ async def func_database(_, message: Message):
             btn = None
         
         try:
-            victim_name = victim_info.mention.HTML if victim_info else user_data.get('mention')
+            victim_name = victim_info.mention if victim_info else user_data.get('mention')
         except: # TypeError ?
             victim_name = user_data.get('mention')
         

@@ -28,7 +28,7 @@ async def func_genqr(_, message: Message):
     caption = (
         f"**Data:** `{data}`\n"
         f"**R.time:** `{response_time}`\n"
-        f"**Req by:** {user.mention.HTML} | `{user.id}`"
+        f"**Req by:** {user.mention} | `{user.id}`"
     )
 
-    await message.reply_photo(response, caption)
+    await message.reply_photo(response, caption=caption)

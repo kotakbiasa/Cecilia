@@ -23,9 +23,9 @@ async def func_decqr(_, message: Message):
     if isinstance(image, tuple): image = image[-1]
     
     if re_msg.photo:
-        sent_message = await message.reply_photo(image.file_id, "Please wait...")
+        sent_message = await message.reply_photo(image.file_id, caption="Please wait...")
     else:
-        sent_message = await message.reply_document(image.file_id, "Please wait...")
+        sent_message = await message.reply_document(image.file_id, caption="Please wait...")
     
     # Reading Image file in memory
     image_data = await re_msg.download(f"/downloads/qrimage_{int(time())}.png", True)
@@ -39,7 +39,7 @@ async def func_decqr(_, message: Message):
             f"**Decoded Data:** `{response.data.decode()}`\n"
             f"**Type:** `{response.type}`\n"
             f"**R.time:** `{response_time}`\n"
-            f"**Req by:** {user.mention.HTML} | `{user.id}`"
+            f"**Req by:** {user.mention} | `{user.id}`"
         )
     else:
         text = "Oops! Something went wrong!"

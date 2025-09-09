@@ -23,7 +23,7 @@ async def func_cadmins(_, message: Message):
 
     try:
         async for admin in message.chat.get_members(filter=ChatMembersFilter.ADMINISTRATORS):
-            formatted_msg = f"• {admin.user.mention.HTML} - <i>{admin.custom_title}</i>\n"
+            formatted_msg = f"• {admin.user.mention} - <i>{admin.custom_title}</i>\n"
 
             if admin.status in [ChatMemberStatus.OWNER]:
                 owner_storage += formatted_msg

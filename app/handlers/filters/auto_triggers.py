@@ -4,7 +4,7 @@ async def autoTriggers(message: Message, user: User, chat: Chat, filters: dict):
     """
     :param message: Message Class
     :param user: `message.from_user`
-    :param chat: `message.chat`
+    :param chat: Chat class
     :param filters: chat filters (from chat database)
     """
     text = message.text or message.caption
@@ -23,7 +23,7 @@ async def autoTriggers(message: Message, user: User, chat: Chat, filters: dict):
                 "{last}": user.last_name or "",
                 "{fullname}": user.full_name,
                 "{username}": user.name,
-                "{mention}": user.mention.HTML,
+                "{mention}": user.mention,
                 "{id}": user.id,
                 "{chatname}": chat.title
             }

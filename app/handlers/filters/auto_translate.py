@@ -22,4 +22,4 @@ async def autoTranslate(message: Message, user: User, lang_code: str):
         return
     
     if response.lower() != text.lower():
-        await message.reply_text(f"{user.mention.HTML}: {response}")
+        await message.reply_text(f"{user.mention}: {response}")

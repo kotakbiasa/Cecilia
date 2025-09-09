@@ -1,61 +1,60 @@
-from telegram import Update, ChatPermissions
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Chat, Message, ChatPermissions
 
-from app.utils.decorators.pm_error import pm_error
-from app.utils.database import DBConstants, MemoryDB, MongoDB, database_search
+from app import bot
 from app.helpers import BuildKeyboard
-from .auxiliary.chat_admins import ChatAdmins
-from .auxiliary.anonymous_admin import anonymousAdmin
+from app.helpers.group_helper import GroupHelper
+from app.helpers.args_extractor import extract_cmd_args
+from app.utils.database import DBConstants, database_search, MemoryDB, MongoDB
+from app.utils.decorators.pm_error import pm_error
 
+@bot.on_message(filters.command(["warn", "dwarn"], ["/", "!", "-", "."]))
 @pm_error
 async def func_warn(_, message: Message):
     chat = message.chat
     user = message.from_user or message.sender_chat
-    message = 
+    username_reason = extract_cmd_args(message.text, message.command)
     re_msg = message.reply_to_message
-    victim = re_msg.from_user if re_msg else None
-    reason = extract_cmd_args(message.text, message.command)
 
-    cmd_prefix = message.text[1]
+    await GroupHelper.cmd_prefix_handler(chat, message, re_msg)
+    victim, reason = await GroupHelper.victim_reason_extractor(message, re_msg, username_reason)
+    if victim is False:
+        return
     
-    if cmd_prefix == "d":
-        try:
-            await chat.delete_messages([message.id, re_msg.id])
-        except:
-            pass
+    if not victim:
+        return await message.reply_text(
+            "I don't know who you are talking about! Mention or Reply the member whom you want to warn!\n"
+            f"E.g`/{message.command[0]} @username reason`"
+        )
     
-    if user.is_bot:
-        user = await anonymousAdmin(chat, message)
+    if victim.id == bot.me.id:
+        return await message.reply_text("Ohh, haha!!")
+    
+    # Handle anonymous admin
+    if isinstance(user, Chat) or user.is_bot:
+        user = await GroupHelper.anonymousAdmin(chat, message)
         if not user:
             return
     
-    if not re_msg:
-        await message.reply_text("I don't know who you are talking about! Reply the member whom you want to warn!\nE.g`/warn [reason]`")
-        return
+    # Getting Admin roles
+    admin_roles = await GroupHelper.get_admin_roles(chat, user.id, victim.id)
     
-    if victim.id == bot.me.id:
-        await message.reply_text("Ohh, haha!! I can remove my own warn's 😝!!")
-        return
-    
-    chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, bot.me.id, user.id, victim.id)
-    
-    if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
-        await message.reply_text("You aren't an admin in this chat!")
-        return
+    # Permission Checking...
+    if not (admin_roles["user_admin"] or admin_roles["user_owner"]):
+        return await message.reply_text("You aren't an admin in this chat!")
 
-    if chat_admins.is_victim_admin or chat_admins.is_victim_owner:
-        await message.reply_text("Rule no. 1 - Admins are always right!\nRule no. 2 - If admins are wrong then read rule no. 1 !!")
-        return
+    if admin_roles["victim_admin"] or admin_roles["victim_owner"]:
+        return await message.reply_text(
+            "Rule no. 1 - Admins are always right!\n"
+            "Rule no. 2 - If admins are wrong then read rule no. 1 !!"
+        )
     
-    if not chat_admins.is_bot_admin:
-        await message.reply_text("I'm not an admin in this chat!")
-        return
+    if not admin_roles["bot_admin"]:
+        return await message.reply_text("I'm not an admin in this chat!")
     
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
-        await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
-        return
+        return await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
     
     warns = chat_data.get("warns") or {}
     victim_warns = warns.get(str(victim.id)) or {} # mongodb doesn't allow int doc key
@@ -66,7 +65,7 @@ async def func_warn(_, message: Message):
     warn_reasons.append(reason if reason else "")
 
     update_data = {
-        "victim_mention": victim.mention.HTML, # needed for remove warns
+        "victim_mention": victim.mention, # needed for remove warns
         "count": warn_count,
         "reasons": warn_reasons
     }
@@ -81,7 +80,7 @@ async def func_warn(_, message: Message):
         MemoryDB.insert(DBConstants.CHATS_DATA, chat.id, {"warns": warns})
     
     text = (
-        f"Watchout, {victim.mention.HTML} !!\n"
+        f"Watchout, {victim.mention} !!\n"
         f"**You got warning's:** `{warn_count}/3`\n"
         f"**Reason (current warn):** `{reason if reason else 'Not Given'}`"
     )
@@ -91,13 +90,20 @@ async def func_warn(_, message: Message):
 
     if warn_count >= 3:
         try:
-            await chat.restrict_member(victim.id, ChatPermissions.no_permissions())
+            await chat.restrict_member(
+                victim.id,
+                ChatPermissions(
+                    can_send_messages=False,
+                    can_send_media_messages=False,
+                    can_send_other_messages=False,
+                    can_send_polls=False
+                )
+            )
         except Exception as e:
-            await message.reply_text(str(e))
-            return
+            return await message.reply_text(str(e))
         
         reasons = ""
         for reason in victim_warns.get("reasons"):
             reasons += f"<blockquote>{reason}</blockquote>\n"
         
-        await message.reply_text(f"{victim.mention.HTML} has been muted!\nWarning's: {reasons}")
+        await message.reply_text(f"{victim.mention} has been muted!\nWarning's: {reasons}")

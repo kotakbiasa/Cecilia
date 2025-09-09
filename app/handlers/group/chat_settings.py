@@ -1,11 +1,10 @@
 from pyrogram import filters
-from pyrogram.types import Message
+from pyrogram.types import Chat, Message
 
 from app import bot
 from app.helpers import BuildKeyboard
+from app.helpers.group_helper import GroupHelper
 from app.utils.database import DBConstants, MemoryDB, database_search
-from .auxiliary.chat_admins import ChatAdmins
-from .auxiliary.anonymous_admin import anonymousAdmin
 
 class GroupChatSettingsData:
     TEXT = (
@@ -38,34 +37,31 @@ class GroupChatSettingsData:
 
 @bot.on_message(filters.command("settings", ["/", "!", "-", "."]) & filters.group)
 async def func_chat_settings(_, message: Message):
-    """This function won't be in handler, instead it will be called in func_settings if chat.type isn't private"""
     chat = message.chat
     user = message.from_user or message.sender_chat
 
-    if user.is_bot:
-        user = await anonymousAdmin(chat, message)
+    # Handle anonymous admin
+    if isinstance(user, Chat) or user.is_bot:
+        user = await GroupHelper.anonymousAdmin(chat, message)
         if not user:
             return
     
-    chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, bot.me.id, user.id)
+    # Getting Admin roles
+    admin_roles = await GroupHelper.get_admin_roles(chat, user.id)
     
-    if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
-        await message.reply_text("You aren't an admin in this chat!")
-        return
+    # Permission Checking...
+    if not (admin_roles["user_admin"] or admin_roles["user_owner"]):
+        return await message.reply_text("You aren't an admin in this chat!")
     
-    if chat_admins.is_user_admin and not chat_admins.is_user_admin.can_change_info:
-        await message.reply_text("You don't have enough permission to manage this chat!")
-        return
+    if admin_roles["user_admin"] and not admin_roles["user_admin"].privileges.can_change_info:
+        return await message.reply_text("You don't have enough permission to manage this chat!")
     
-    if not chat_admins.is_bot_admin:
-        await message.reply_text("I'm not an admin in this chat!")
-        return
+    if not admin_roles["bot_admin"]:
+        return await message.reply_text("I'm not an admin in this chat!")
     
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
-        await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
-        return
+        return await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
     
     data = {
         "user_id": user.id, # authorization
@@ -92,5 +88,4 @@ async def func_chat_settings(_, message: Message):
     )
 
     btn = BuildKeyboard.cbutton(GroupChatSettingsData.BUTTONS)
-
     await message.reply_text(text, reply_markup=btn)

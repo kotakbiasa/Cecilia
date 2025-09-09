@@ -49,7 +49,7 @@ async def func_send(_, message: Message):
             
             if victim_chat_info.type in [ChatType.PRIVATE]:
                 text = (
-                    f"Message: {re_msg.text_html}\n\n"
+                    f"Message: {re_msg.text.html}\n\n"
                     "<i>Reply to this message to continue conversation!</i>\n"
                     f"<tg-spoiler>#uid{hex(user.id)}</tg-spoiler>"
                 )
@@ -59,7 +59,7 @@ async def func_send(_, message: Message):
                     f"<tg-spoiler>#uid{hex(user.id)}</tg-spoiler>"
                 )
             else:
-                text = re_msg.text_html
+                text = re_msg.text.html
                 caption = re_msg.caption_html
             
             photo = re_msg.photo

@@ -38,9 +38,8 @@ async def autoLinkBlocker(message: Message, user: User, link_rules: dict):
 
     if counter != len(links):
         await message.delete()
-        text = (
-            f"{user.mention.HTML}: {text}\n\n"
+        await message.reply_text(
+            f"{user.mention}: {text}\n\n"
             "<i>Delete reason: your message contains forbidden link/s!</i>"
         )
-        await message.reply_text(text)
         return text

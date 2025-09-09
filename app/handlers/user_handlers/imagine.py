@@ -27,10 +27,10 @@ async def func_imagine(_, message: Message):
         return
     
     caption = (
-        f"<blockquote>{user.mention.HTML}: {prompt}</blockquote>\n"
+        f"<blockquote>{user.mention}: {prompt}</blockquote>\n"
         f"**Process time:** `{response_time}`\n"
         f"**UserID:** `{user.id}`"
     )
 
     await sent_message.delete()
-    await message.reply_photo(response, caption)
+    await message.reply_photo(response, caption=caption)

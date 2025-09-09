@@ -10,10 +10,10 @@ def update_database():
         return
     
     config_data = {
+        "api_id": config.api_id,
+        "api_hash": config.api_hash,
         "bot_token": config.bot_token,
         "owner_id": config.owner_id,
-        "show_bot_pic": config.show_bot_pic,
-        "server_url": config.server_url,
 
         "mongodb_uri": config.mongodb_uri,
         "db_name": config.db_name,

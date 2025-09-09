@@ -1,34 +1,37 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Chat, Message
 
+from app import bot
+from app.helpers.group_helper import GroupHelper
 from app.utils.decorators.pm_error import pm_error
-from .auxiliary.chat_admins import ChatAdmins
 
+@bot.on_message(filters.command("kickme", ["/", "!", "-", "."]))
 @pm_error
 async def func_kickme(_, message: Message):
     chat = message.chat
     user = message.from_user or message.sender_chat
-    message = 
+
+    # Handle anonymous admin
+    if isinstance(user, Chat) or user.is_bot:
+        # Instead of handling with func, bot will return bcz the user must be an admin anyway
+        return await message.reply_text("I'm not going to kick you! You must be kidding!")
     
-    chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, bot.me.id, user.id)
+    # Getting Admin roles
+    admin_roles = await GroupHelper.get_admin_roles(chat, user.id)
     
-    if (chat_admins.is_user_admin or chat_admins.is_user_owner):
-        await message.reply_text("I'm not going to kick you! You must be kidding!")
-        return
+    # Permission Checking...
+    if (admin_roles["user_admin"] or admin_roles["user_owner"]):
+        return await message.reply_text("I'm not going to kick you! You must be kidding!")
     
-    if not chat_admins.is_bot_admin:
-        await message.reply_text("I'm not an admin in this chat!")
-        return
+    if not admin_roles["bot_admin"]:
+        return await message.reply_text("I'm not an admin in this chat!")
     
-    if not chat_admins.is_bot_admin.can_restrict_members:
-        await message.reply_text("I don't have enough permission to kick members in this chat!")
-        return
+    if not admin_roles["bot_admin"].privileges.can_restrict_members:
+        return await message.reply_text("I don't have enough permission to kick members in this chat!")
     
     try:
         await chat.unban_member(user.id)
     except Exception as e:
-        await message.reply_text(str(e))
-        return
+        return await message.reply_text(str(e))
     
-    await message.reply_text(f"Nice Choice! Get out of my sight!\n{user.mention.HTML} has chosen the easy way to out!")
+    await message.reply_text(f"Nice Choice! Get out of my sight!\n{user.mention} has chosen the easy way to out!")

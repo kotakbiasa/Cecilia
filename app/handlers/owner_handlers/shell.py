@@ -46,4 +46,4 @@ async def func_shell(_, message: Message):
         shell.name = "shell.txt"
 
         await sent_message.delete()
-        await message.reply_document(shell, f"**Command**: {command}\n**Execute time**: {(time_executed - time_executing):.2f}s")
+        await message.reply_document(shell, caption=f"**Command**: {command}\n**Execute time**: {(time_executed - time_executing):.2f}s")

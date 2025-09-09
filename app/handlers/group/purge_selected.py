@@ -1,48 +1,45 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Chat, Message
 
-from app.utils.decorators.pm_error import pm_error
+from app import bot
+from app.helpers import GroupHelper
 from app.utils.database import DBConstants, MemoryDB
-from .auxiliary.chat_admins import ChatAdmins
-from .auxiliary.anonymous_admin import anonymousAdmin
+from app.utils.decorators.pm_error import pm_error
 
+@bot.on_message(filters.command(["purgefrom", "pf"], ["/", "!", "-", "."]))
 @pm_error
 async def func_purgefrom(_, message: Message):
     chat = message.chat
     user = message.from_user or message.sender_chat
-    message = 
     re_msg = message.reply_to_message
+
+    if not re_msg:
+        return await message.reply_text(
+            "Reply the message where you want to purge from! Then use /purgeto to start.\n"
+            "_**Note:** All messages between purgefrom and purgeto will be deleted!_"
+        )
     
-    if user.is_bot:
-        user = await anonymousAdmin(chat, message)
+    # Handle anonymous admin
+    if isinstance(user, Chat) or user.is_bot:
+        user = await GroupHelper.anonymousAdmin(chat, message)
         if not user:
             return
     
-    if not re_msg:
-        await message.reply_text(
-            "Reply the message where you want to purge from! Then use /purgeto to start.\n"
-            "Note: All messages between purgefrom and purgeto will be deleted!"
-        )
-        return
+    # Getting Admin roles
+    admin_roles = await GroupHelper.get_admin_roles(chat, user.id)
     
-    chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, bot.me.id, user.id)
+    # Permission Checking...
+    if not (admin_roles["user_admin"] or admin_roles["user_owner"]):
+        return await message.reply_text("You aren't an admin in this chat!")
     
-    if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
-        await message.reply_text("You aren't an admin in this chat!")
-        return
+    if admin_roles["user_admin"] and not admin_roles["user_admin"].privileges.can_delete_messages:
+        return await message.reply_text("You don't have enough permission to delete chat messages!")
     
-    if chat_admins.is_user_admin and not chat_admins.is_user_admin.can_delete_messages:
-        await message.reply_text("You don't have enough permission to delete chat messages!")
-        return
+    if not admin_roles["bot_admin"]:
+        return await message.reply_text("I'm not an admin in this chat!")
     
-    if not chat_admins.is_bot_admin:
-        await message.reply_text("I'm not an admin in this chat!")
-        return
-    
-    if not chat_admins.is_bot_admin.can_delete_messages:
-        await message.reply_text("I don't have enough permission to delete chat messages!")
-        return
+    if not admin_roles["bot_admin"].privileges.can_delete_messages:
+        return await message.reply_text("I don't have enough permission to delete chat messages!")
     
     await message.delete()
     sent_message = await message.reply_text("Now reply the last message to delete by /purgeto command.")
@@ -56,41 +53,38 @@ async def func_purgefrom(_, message: Message):
     MemoryDB.insert(DBConstants.DATA_CENTER, chat.id, data)
 
 
+@bot.on_message(filters.command(["purgeto", "pt"], ["/", "!", "-", "."]))
 @pm_error
 async def func_purgeto(_, message: Message):
     chat = message.chat
     user = message.from_user or message.sender_chat
-    message = 
     re_msg = message.reply_to_message
     
-    if user.is_bot:
-        user = await anonymousAdmin(chat, message)
-        if not user:
-            return
-    
     if not re_msg:
-        await message.reply_text(
+        return await message.reply_text(
             "Reply the last message to delete.\n"
-            "Note: All messages between purgefrom and purgeto will be deleted!"
+            "_**Note:** All messages between `purgefrom` and `purgeto` will be deleted!_"
         )
-        return
     
     data_center = MemoryDB.data_center.get(chat.id)
     if not data_center:
-        await message.reply_text("Use /purgefrom for details.")
-        return
+        return await message.reply_text("Use /purgefrom for details.")
+    
+    # Handle anonymous admin
+    if isinstance(user, Chat) or user.is_bot:
+        user = await GroupHelper.anonymousAdmin(chat, message)
+        if not user:
+            return
     
     purge_user_id = data_center.get("purge_user_id") # for checking is that same user
     purge_message_id = data_center.get("purge_message_id")
     sent_message_id = data_center.get("sent_message_id") # for deleting this message
 
     if not purge_message_id:
-        await message.reply_text("Use /purgefrom for details.")
-        return
+        return await message.reply_text("Use /purgefrom for details.")
     
     if purge_user_id != user.id:
-        await message.reply_text("Task isn't yours!")
-        return
+        return await message.reply_text("Task isn't yours!")
     
     message_ids = []
     for message_id in range(purge_message_id, re_msg.id):
@@ -99,12 +93,11 @@ async def func_purgeto(_, message: Message):
     message_ids.append(sent_message_id)
 
     try:
-        await chat.delete_messages(message_ids)
+        await bot.delete_messages(chat.id, message_ids)
     except Exception as e:
-        await message.reply_text(str(e))
-        return
+        return await message.reply_text(str(e))
     
-    # cleaning memory
+    # Cleaning Memory Data
     data = {
         "purge_user_id": None,
         "purge_message_id": None,

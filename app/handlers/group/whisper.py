@@ -1,63 +1,60 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Chat, Message
 
-from app.utils.decorators.pm_error import pm_error
-from app.utils.database import DBConstants, MemoryDB, MongoDB, database_search
-from app.modules.utils import UTILITY
+from app import bot
 from app.helpers import BuildKeyboard
+from app.helpers.group_helper import GroupHelper
+from app.helpers.args_extractor import extract_cmd_args
+from app.modules.utils import UTILITY
+from app.utils.database import DBConstants, database_search, MemoryDB, MongoDB
+from app.utils.decorators.pm_error import pm_error
 
+@bot.on_message(filters.command("whisper", ["/", "!", "-", "."]))
 @pm_error
 async def func_whisper(_, message: Message):
-    user = message.from_user or message.sender_chat
+    # Priority: Replied user > @username
     chat = message.chat
-    message = 
-    re_msg = message.reply_to_message
+    user = message.from_user or message.sender_chat
     secret_message = extract_cmd_args(message.text, message.command)
+    re_msg = message.reply_to_message
+    victim = None
     
     if not secret_message:
-        await message.reply_text("Use `/whisper @username message`\nor reply user by `/whisper message`\nE.g. `/whisper @bishalqx980 This is a secret message 😜`")
-        return
+        return await message.reply_text(
+            f"Use `/{message.command[0]} @username message`\n"
+            f"or reply user by `/{message.command[0]} message`\n"
+            f"E.g. `/{message.command[0]} @bishalqx980 I'm Just A Man Who's Good At What He Does. Programming.`"
+        )
     
     try:
         await message.delete()
     except Exception as e:
-        await message.reply_text(str(e))
-        return
-
-    if re_msg and re_msg.from_user.is_bot:
-        await message.reply_text("Whisper isn't for bots!")
-        return
+        return await message.reply_text(str(e))
     
-    elif re_msg:
-        whisper_username = re_msg.from_user.name if re_msg.from_user.username else None
-        whisper_user_id = re_msg.from_user.id
-        # secret_message is already taken as context args
-
-    elif secret_message:
-        splitted_message = secret_message.split()
-
-        whisper_username = splitted_message[0]
-        whisper_user_id = None
-        secret_message = " ".join(splitted_message[1:])
-
-        if not whisper_username.startswith("@"):
-            await message.reply_text(f"`{whisper_username}` isn't a valid username!\nTry to reply the user. /whisper for more details.")
-            return
-        
-        if whisper_username.endswith("bot"):
-            await message.reply_text("Whisper isn't for bots!")
+    # Handle anonymous admin
+    if isinstance(user, Chat) or user.is_bot:
+        user = await GroupHelper.anonymousAdmin(chat, message)
+        if not user:
             return
     
-    if len(secret_message) > 150:
-        await message.reply_text("Whisper message is too long. (Max limit: 150 Characters)")
-        return
+    if re_msg:
+        victim = re_msg.from_user
+    else:
+        victim, secret_message = await GroupHelper.victim_reason_extractor(message, re_msg, secret_message)
+        if not victim is False:
+            return
+    
+    if victim.is_bot:
+        return await message.reply_text("Huh! Whisper isn't for bots!")
+    
+    if len(secret_message) > 180:
+        return await message.reply_text("Whisper message is too long. (Max limit: 180 Characters)")
     
     sent_message = await message.reply_text("Processing...")
 
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
-        await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
-        return
+        return await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
     
     whispers = chat_data.get("whispers") or {}
     whisper_key = UTILITY.randomString()
@@ -65,21 +62,17 @@ async def func_whisper(_, message: Message):
     whispers.update({
         whisper_key: {
             "sender_user_id": user.id,
-            "user_id": whisper_user_id,
-            "username": whisper_username, # contains @ prefix
+            "user_id": victim.id,
+            "username": victim.username, # contains @ prefix
             "message": secret_message
         }
     })
 
     response = MongoDB.update(DBConstants.CHATS_DATA, "chat_id", chat.id, {"whispers": whispers})
     if not response:
-        await sent_message.edit_text("Hmm, Something went wrong! Try again or report the issue!")
-        return
+        return await sent_message.edit_text("Hmm, Something went wrong! Try again or report the issue!")
     
     MemoryDB.insert(DBConstants.CHATS_DATA, chat.id, {"whispers": whispers})
-    
-    if re_msg and whisper_username is None:
-        whisper_username = re_msg.from_user.mention.HTML
-    
+
     btn = BuildKeyboard.cbutton([{"See the message 💭": f"misc_whisper_{whisper_key}"}])
-    await sent_message.edit_text(f"Hey, {whisper_username}. You got a whisper message from {user.name}.", reply_markup=btn)
+    await sent_message.edit_text(f"Hey, {victim.mention}. You got a whisper message from _{user.full_name}_.", reply_markup=btn)

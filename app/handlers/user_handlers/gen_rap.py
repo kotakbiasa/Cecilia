@@ -31,4 +31,4 @@ async def func_rap(_, message: Message):
         f"**• Region:** `{result['packageData'].get('region')}`\n"
     )
 
-    await message.reply_document(result["rapBytes"], caption)
+    await message.reply_document(result["rapBytes"], caption=caption)

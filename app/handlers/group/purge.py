@@ -1,66 +1,55 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Chat, Message
 
+from app import bot
+from app.helpers import GroupHelper
 from app.utils.decorators.pm_error import pm_error
-from .auxiliary.chat_admins import ChatAdmins
-from .auxiliary.anonymous_admin import anonymousAdmin
 
+@bot.on_message(filters.command(["purge", "spurge"], ["/", "!", "-", "."]))
 @pm_error
 async def func_purge(_, message: Message):
     chat = message.chat
     user = message.from_user or message.sender_chat
-    message = 
     re_msg = message.reply_to_message
 
-    cmd_prefix = message.text[1]
-    is_silent = False
+    is_silent = await GroupHelper.cmd_prefix_handler(chat, message, re_msg)
     
-    if cmd_prefix == "s":
-        is_silent = True
-        try:
-            await message.delete()
-        except:
-            pass
+    if not re_msg:
+        return await message.reply_text("Reply the message where you want to purge from!")
     
-    if user.is_bot:
-        user = await anonymousAdmin(chat, message)
+    # Handle anonymous admin
+    if isinstance(user, Chat) or user.is_bot:
+        user = await GroupHelper.anonymousAdmin(chat, message)
         if not user:
             return
     
-    if not re_msg:
-        await message.reply_text("Reply the message where you want to purge from!")
-        return
+    # Getting Admin roles
+    admin_roles = await GroupHelper.get_admin_roles(chat, user.id)
     
-    chat_admins = ChatAdmins()
-    await chat_admins.fetch_admins(chat, bot.me.id, user.id)
+    # Permission Checking...
+    if not (admin_roles["user_admin"] or admin_roles["user_owner"]):
+        return await message.reply_text("You aren't an admin in this chat!")
     
-    if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
-        await message.reply_text("You aren't an admin in this chat!")
-        return
+    if admin_roles["user_admin"] and not admin_roles["user_admin"].privileges.can_delete_messages:
+        return await message.reply_text("You don't have enough permission to delete chat messages!")
     
-    if chat_admins.is_user_admin and not chat_admins.is_user_admin.can_delete_messages:
-        await message.reply_text("You don't have enough permission to delete chat messages!")
-        return
+    if not admin_roles["bot_admin"]:
+        return await message.reply_text("I'm not an admin in this chat!")
     
-    if not chat_admins.is_bot_admin:
-        await message.reply_text("I'm not an admin in this chat!")
-        return
-    
-    if not chat_admins.is_bot_admin.can_delete_messages:
-        await message.reply_text("I don't have enough permission to delete chat messages!")
-        return
+    if not admin_roles["bot_admin"].privileges.can_delete_messages:
+        return await message.reply_text("I don't have enough permission to delete chat messages!")
     
     sent_message = await message.reply_text("Purge started!")
     
     message_ids = []
-    for message_id in range(re_msg.id, message.id + 1):
+    for message_id in range(re_msg.id, message.id):
         message_ids.append(message_id)
     
     try:
-        await chat.delete_messages(message_ids)
+        await bot.delete_messages(message_ids)
+        await message.delete()
     except Exception as e:
-        await sent_message.edit_text(str(e))
-        return
+        return await sent_message.edit_text(str(e))
     
     if is_silent:
         await sent_message.delete()

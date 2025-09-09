@@ -32,7 +32,7 @@ async def filter_private_chat(_, message: Message):
                 # if user sending message to owner/support-team then add userinfo
                 if user.id != config.owner_id:
                     text += (
-                        f"Name: {user.mention.HTML}\n"
+                        f"Name: {user.mention}\n"
                         f"UserID: `{user.id}`\n"
                     )
 

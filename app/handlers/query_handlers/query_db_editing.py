@@ -24,7 +24,7 @@ async def query_db_editing(_, message: Message):
         await query.answer("Session Expired.", True)
         try:
             message_id = query.message.message_id
-            await chat.delete_messages([message_id, message_id - 1])
+            await bot.delete_messages([message_id, message_id - 1])
         except:
             try:
                 await query.delete_message()
@@ -74,7 +74,7 @@ async def query_db_editing(_, message: Message):
             if data_center.get("message_id"):
                 message_ids.append(data_center.get("message_id"))
             
-            await chat.delete_messages(message_ids)
+            await bot.delete_messages(message_ids)
         except:
             pass
 

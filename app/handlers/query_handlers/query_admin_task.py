@@ -24,10 +24,10 @@ async def query_groupManagement(_, message: Message):
         # expecting remove_warn_[victim_id]
         victim_id = query_data.removeprefix("remove_warn_")
 
-        chat_admins = ChatAdmins()
-        await chat_admins.fetch_admins(chat, user_id=user.id)
         
-        if not (chat_admins.is_user_admin or chat_admins.is_user_owner):
+        await chat_admins.fetch_admins( user_id=user.id)
+        
+        if not (admin_roles["user_admin"] or admin_roles["user_owner"]):
             await query.answer("You aren't an admin in this chat!", True)
             return
         
@@ -51,7 +51,7 @@ async def query_groupManagement(_, message: Message):
             await query.edit_message_text(str(e))
             return
         
-        await query.edit_message_text(f"Great! Admin {user.mention.HTML} has cleared all warnings of {victim_mention or f'`{victim_id}`'}.")
+        await query.edit_message_text(f"Great! Admin {user.mention} has cleared all warnings of {victim_mention or f'`{victim_id}`'}.")
     
     elif query_data.startswith("leavechat_"):
         # expecting leavechat_[adminUserID]

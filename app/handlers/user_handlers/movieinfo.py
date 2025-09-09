@@ -63,6 +63,6 @@ async def func_movie(_, message: Message):
 
     photo = movie_info["Poster"]
     if photo:
-        await message.reply_photo(photo, text)
+        await message.reply_photo(photo, caption=text)
     else:
         await message.reply_text(text)
