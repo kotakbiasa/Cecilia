@@ -1,11 +1,11 @@
-from telegram import Message, User
+from pyrogram.types import Message, User
 from app.modules.re_link import RE_LINK
 from app.modules.base64 import BASE64
 
 async def autoLinkBlocker(message: Message, user: User, link_rules: dict):
     """
     :param message: Message Class
-    :param user: `message.from_user`
+    :param user: User class (`message.from_user`)
     :param link_rules: `dict` of link rules (database variables)
     """
     links_behave = link_rules.get("links_behave") # 3 values: delete; convert; None;

@@ -1,17 +1,20 @@
 import json
 from io import BytesIO
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.error import BadRequest
-from app import logger
-from app.utils.update_db import update_database
-from app.helpers import BuildKeyboard
-from app.utils.database import DBConstants, MemoryDB, MongoDB
-from ..owner_handlers.bsettings import BotSettingsData
 
-async def query_bot_settings(_, message: Message):
-    user = message.from_user or message.sender_chat
-    query = update.callback_query
+from pyrogram import filters
+from pyrogram.types import CallbackQuery
+from pyrogram.errors import BadRequest
+
+from app import bot, logger
+from app.helpers import BuildKeyboard
+from app.utils.update_db import update_database
+from app.utils.database import DBConstants, MemoryDB, MongoDB
+
+from app.handlers.owner_handlers.bsettings import BotSettingsData
+
+@bot.on_callback_query(filters.regex(r"bsettings_[A-Za-z0-9]+"))
+async def query_bot_settings(_, query: CallbackQuery):
+    user = query.from_user
 
     # refined query data
     query_data = query.data.removeprefix("bsettings_")

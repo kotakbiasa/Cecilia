@@ -1,16 +1,19 @@
 import asyncio
 from time import time
 from io import BytesIO
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.error import BadRequest, Forbidden
-from app.utils.database import DBConstants, MemoryDB, MongoDB
-from app.modules.utils import UTILITY
-from app.helpers import BuildKeyboard
 
-async def query_broadcast(_, message: Message):
-    chat = message.chat
-    query = update.callback_query
+from pyrogram import filters
+from pyrogram.types import CallbackQuery
+from pyrogram.errors import BadRequest, Forbidden
+
+from app import bot
+from app.helpers import BuildKeyboard
+from app.modules.utils import UTILITY
+from app.utils.database import DBConstants, MemoryDB, MongoDB
+
+@bot.on_callback_query(filters.regex(r"broadcast_[A-Za-z0-9]+"))
+async def query_broadcast(_, query: CallbackQuery):
+    chat = query.message.chat
 
     # refined query data
     query_data = query.data.removeprefix("broadcast_")
@@ -18,13 +21,11 @@ async def query_broadcast(_, message: Message):
     # accessing Database
     broadcastData = MemoryDB.data_center.get("broadcast")
     if not broadcastData:
-        await query.answer("Session Expired!", True)
-        return
+        return await query.answer("Session Expired!", True)
     
     # handling query
     if query_data == "none":
-        await query.answer()
-        return
+        return await query.answer()
     
     # only for boolean (toggle)
     elif query_data.startswith("value_"):
@@ -108,8 +109,7 @@ async def query_broadcast(_, message: Message):
         except BadRequest:
             await query.edit_message_caption(text, reply_markup=broadcastData)
         except Exception as e:
-            await chat.send_message(str(e))
-            return
+            return await chat.send_message(str(e))
 
         broadcastStartTime = time()
 
@@ -122,22 +122,22 @@ async def query_broadcast(_, message: Message):
             
             try:
                 if is_forward:
-                    sent_message = await context.bot.forward_message(user_id, chat.id, broadcastData["replied_message_id"])
+                    sent_message = await bot.forward_messages(user_id, chat.id, broadcastData["replied_message_id"])
                 else:
                     if broadcastText:
-                        sent_message = await context.bot.send_message(chat_id=user_id, text=broadcastText)
+                        sent_message = await bot.send_message(chat_id=user_id, text=broadcastText)
                     elif broadcastPhoto:
-                        sent_message = await context.bot.send_photo(chat_id=user_id, photo=broadcastPhoto, caption=broadcastCaption)
+                        sent_message = await bot.send_photo(chat_id=user_id, photo=broadcastPhoto, caption=broadcastCaption)
                     elif broadcastDocument:
-                        sent_message = await context.bot.send_document(chat_id=user_id, document=broadcastDocument, caption=broadcastCaption, filename=broadcastDocument_filename)
+                        sent_message = await bot.send_document(chat_id=user_id, document=broadcastDocument, caption=broadcastCaption, file_name=broadcastDocument_filename)
                     elif broadcastVideo:
-                        sent_message = await context.bot.send_video(chat_id=user_id, video=broadcastVideo, caption=broadcastCaption)
+                        sent_message = await bot.send_video(chat_id=user_id, video=broadcastVideo, caption=broadcastCaption)
                     elif broadcastVideo_note:
-                        sent_message = await context.bot.send_video_note(chat_id=user_id, video_note=broadcastVideo_note)
+                        sent_message = await bot.send_video_note(chat_id=user_id, video_note=broadcastVideo_note)
                     elif broadcastAudio:
-                        sent_message = await context.bot.send_audio(chat_id=user_id, audio=broadcastAudio, title=broadcastAudio_filename, caption=broadcastCaption, filename=broadcastAudio_filename)
+                        sent_message = await bot.send_audio(chat_id=user_id, audio=broadcastAudio, title=broadcastAudio_filename, caption=broadcastCaption, file_name=broadcastAudio_filename)
                     elif broadcastVoice:
-                        sent_message = await context.bot.send_voice(chat_id=user_id, voice=broadcastVoice, caption=broadcastCaption)
+                        sent_message = await bot.send_voice(chat_id=user_id, voice=broadcastVoice, caption=broadcastCaption)
                 
                 if sent_message: sent_count += 1
 
@@ -200,7 +200,7 @@ async def query_broadcast(_, message: Message):
             exception_file = BytesIO(", ".join(exception_users_id).encode())
             exception_file.name = "Exception.txt"
 
-            await chat.send_document(exception_file, f"Total Exception: {len(exception_users_id)}")
+            await bot.send_document(chat_id=chat.id, document=exception_file, caption=f"Total Exception: {len(exception_users_id)}")
     
     elif query_data == "cancel":
         broadcastData.update({"is_cancelled": True})

@@ -1,7 +1,8 @@
-from telegram import Update, ChatMember
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import Message
+from pyrogram.enums import ChatMemberStatus
 
-from app import TL_LANG_CODES_URL
+from app import bot, TL_LANG_CODES_URL
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, database_search
 
@@ -10,10 +11,10 @@ from .auto_linkblocker import autoLinkBlocker
 from .auto_translate import autoTranslate
 from .auto_triggers import autoTriggers
 
+@bot.on_message(filters.group & ~filters.regex(r"^[\/!\-.]"))
 async def filter_public_chat(_, message: Message):
     chat = message.chat
     user = message.from_user or message.sender_chat
-    message = 
 
     is_editing = edit_database(chat.id, user.id, message)
     if is_editing:
@@ -21,8 +22,7 @@ async def filter_public_chat(_, message: Message):
     
     chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
     if not chat_data:
-        await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
-        return
+        return await message.reply_text("<blockquote>**Error:** Chat isn't registered! Remove/Block me from this chat then add me again!</blockquote>")
     
     # Auto Link Blocker
     links_behave = chat_data.get("links_behave") # 3 values: delete; convert; None;
@@ -31,7 +31,7 @@ async def filter_public_chat(_, message: Message):
     if links_behave:
         # check if user is admin or owner
         member_info = await chat.get_member(user.id)
-        if member_info.status not in [ChatMember.ADMINISTRATOR, ChatMember.OWNER]:
+        if member_info.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
             link_rules = {"links_behave": links_behave, "allowed_links": chat_data.get("allowed_links")}
             is_forbidden = await autoLinkBlocker(message, user, link_rules)
 
@@ -40,8 +40,8 @@ async def filter_public_chat(_, message: Message):
     
     # Echo message
     if chat_data.get("echo") and not filtered_text:
-        await message.reply_text(message.text_html or message.caption_html)
-
+        await message.reply_text(message.text.html or message.caption.html)
+    
     # Auto Translator
     auto_tr = chat_data.get("auto_tr")
     chat_lang = chat_data.get("lang")

@@ -1,5 +1,5 @@
 from pyrogram import filters
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 from app import bot, config, logger
 from app.helpers import BuildKeyboard
@@ -27,9 +27,10 @@ async def support_state_one(_, message: Message):
             f"UserID: `{user.id}`\n"
             f"Message: {message.text.html}\n\n"
             "<i>Reply to this message to continue conversation! or use /send</i>\n"
-            f"<tg-spoiler>#uid{hex(user.id)}</tg-spoiler>"
+            f"<tg-spoiler>#uid{hex(user.id).upper()}</tg-spoiler>"
         )
 
+        btn = InlineKeyboardMarkup([[InlineKeyboardButton("User Profile", user_id=victim.id)]]) if victim.username else None
         btn = BuildKeyboard.ubutton([{"User Profile": f"tg://user?id={user.id}"}]) if user.username else None
         await bot.send_message(config.owner_id, text, reply_markup=btn)
         # confirm message

@@ -1,20 +1,20 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+from pyrogram import filters
+from pyrogram.types import CallbackQuery
 
+from app import bot
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MemoryDB, MongoDB, database_search
 
-async def query_misc(_, message: Message):
-    chat = message.chat
-    user = message.from_user or message.sender_chat
-    query = update.callback_query
+@bot.on_callback_query(filters.regex(r"misc_[A-Za-z0-9]+"))
+async def query_misc(_, query: CallbackQuery):
+    chat = query.message.chat
+    user = query.from_user
 
     # refined query data
     query_data = query.data.removeprefix("misc_")
 
     if query_data == "none":
-        await query.answer()
-        return
+        return await query.answer()
     
     elif query_data.startswith("tmp_whisper_"):
         data_center = MemoryDB.data_center.get("whisper_data") or {}
@@ -24,8 +24,7 @@ async def query_misc(_, message: Message):
         whisper_user_data = whispers.get(whisper_key)
 
         if not whisper_user_data:
-            await query.answer("Whisper has been expired!", True)
-            return
+            return await query.answer("Whisper has been expired!", True)
         
         whisper_sender_user_id = whisper_user_data.get("sender_user_id")
         whisper_username = whisper_user_data.get("username") # contains @ prefix
@@ -38,12 +37,10 @@ async def query_misc(_, message: Message):
             # access granted for message sender
             # If sender & receiver are same user then mark the message as seen
             whisper_seen = True if whisper_username == user.name else False
-            pass
 
         # verifying user (only by username)
         elif whisper_username != user.name:
-            await query.answer("This whisper isn't for you. (if you believe it's yours then maybe you changed your `username`)", True)
-            return
+            return await query.answer("This whisper isn't for you. (if you believe it's yours then maybe you changed your `username`)", True)
         
         await query.answer(whisper_message, True)
         # delete whisper is seen
@@ -58,8 +55,7 @@ async def query_misc(_, message: Message):
     elif query_data.startswith("whisper_"):
         chat_data = database_search(DBConstants.CHATS_DATA, "chat_id", chat.id)
         if not chat_data:
-            await query.answer("Chat isn't registered! Remove/Block me from this chat then add me again!", True)
-            return
+            return await query.answer("Chat isn't registered! Remove/Block me from this chat then add me again!", True)
         
         whispers = chat_data.get("whispers") or {}
         # other variables
@@ -67,8 +63,7 @@ async def query_misc(_, message: Message):
         whisper_user_data = whispers.get(whisper_key)
 
         if not whisper_user_data:
-            await query.answer("What? There is no whisper message!!", True)
-            return
+            return await query.answer("What? There is no whisper message!!", True)
         
         whisper_sender_user_id = whisper_user_data.get("sender_user_id")
         whisper_user_id = whisper_user_data.get("user_id")
@@ -86,8 +81,7 @@ async def query_misc(_, message: Message):
 
         # verifying user
         elif (whisper_user_id and whisper_user_id != user.id) or (whisper_username and whisper_username != user.name):
-            await query.answer("This whisper isn't for you. (if you believe it's yours then maybe you changed your `username`)", True)
-            return
+            return await query.answer("This whisper isn't for you. (if you believe it's yours then maybe you changed your `username`)", True)
         
         await query.answer(whisper_message, True)
         # delete whisper is seen

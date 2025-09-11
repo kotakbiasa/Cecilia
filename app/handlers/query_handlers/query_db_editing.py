@@ -1,19 +1,24 @@
 import asyncio
-from telegram import Update
-from telegram.ext import ContextTypes
+
+from pyrogram import filters
+from pyrogram.types import CallbackQuery
+from pyrogram.enums import ChatType
+from pyrogram.errors import BadRequest
+
+from app import bot
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MemoryDB, MongoDB
 
-async def query_db_editing(_, message: Message):
+@bot.on_callback_query(filters.regex(r"database_[A-Za-z0-9]+"))
+async def query_db_editing(_, query: CallbackQuery):
     """
     This function accepts (`edit_value`, `cancel_editing`, `value_[custom value]`, `rm_value`, `bool_[true/false]`) callback query data's\n
     `value_`: The data given after value_ takes as `update_data_value`\n
     `bool_`: Expects `bool_true` or `bool_false`\n
     `rm_value`: Sets `update_data_value` as None
     """
-    chat = message.chat
-    user = message.from_user or message.sender_chat
-    query = update.callback_query
+    chat = query.message.chat
+    user = query.from_user
 
     # refined query data
     query_data = query.data.removeprefix("database_")
@@ -35,8 +40,7 @@ async def query_db_editing(_, message: Message):
     # verifying user
     user_id = data_center.get("user_id")
     if user_id != user.id:
-        await query.answer("Access Denied!", True)
-        return
+        return await query.answer("Access Denied!", True)
     
     # memory accessed data
     collection_name = data_center.get("collection_name")
@@ -61,8 +65,7 @@ async def query_db_editing(_, message: Message):
             # to check > is operation cancelled
             is_editing = data_center.get("is_editing")
             if not is_editing:
-                await query.answer()
-                return
+                return await query.answer()
             
             await asyncio.sleep(1)
             update_data_value = data_center.get("update_data_value")
@@ -82,8 +85,7 @@ async def query_db_editing(_, message: Message):
         MemoryDB.insert(DBConstants.DATA_CENTER, chat.id, {"is_editing": False})
 
         if not update_data_value:
-            await query.answer("Timeout.", True)
-            return
+            return await query.answer("Timeout.", True)
         
         if is_list:
             values = str(update_data_value).split(",") if "," in str(update_data_value) else [str(update_data_value)]

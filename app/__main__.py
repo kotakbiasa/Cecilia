@@ -13,35 +13,6 @@ from .utils.update_db import update_database
 from .modules import telegraph
 from .utils.database import MemoryDB
 
-# from .handlers.conversation.support import (
-#     SUPPORT_STATES,
-#     init_support_conv,
-#     support_state_one,
-#     cancel_support_conv
-# )
-
-# from .handlers.filters import (
-#     filter_private_chat,
-#     filter_public_chat
-# )
-
-# from .handlers.core.help import func_help
-# from .handlers.group.chat_join_req import join_request_handler
-
-# from .handlers.query_handlers import (
-#     inline_query,
-#     query_admin_task,
-#     query_bot_settings,
-#     query_chat_settings,
-#     query_help_menu,
-#     query_misc,
-#     query_broadcast,
-#     query_db_editing
-# )
-
-# from .handlers.bot_chats_tracker import bot_chats_tracker
-# from .handlers.chat_status_update import chat_status_update
-
 
 async def post_init():
     # initializing telegraph
@@ -146,89 +117,19 @@ async def server_alive():
 #     except Exception as e:
 #         logger.error(e)
 
-from .handlers.core.start import *
-from .handlers.core.help import *
-from .handlers.owner_handlers.sys import *
-from .handlers.user_handlers.info import *
-from .handlers.group.adminlist import *
-from .handlers.group.ban import *
 
-# def load_handlers():
-#     handlers_dir = "app/handlers"
-#     for root, dirs, files in os.walk(handlers_dir):
-#         for filename in files:
-#             if filename.endswith(".py") and not filename.startswith("_"):
-#                 rel_path = os.path.relpath(root, handlers_dir)
-#                 if rel_path == ".":
-#                     module_path = f"app.handlers.{filename[:-3]}"
-#                 else:
-#                     rel_module_path = rel_path.replace(os.sep, ".")
-#                     module_path = f"app.handlers.{rel_module_path}.{filename[:-3]}"
-#                 __import__(module_path)
-
-
-# def main():
-    # default_param = Defaults(
-    #     parse_mode=ParseMode.HTML,
-    #     link_preview_options=LinkPreviewOptions(is_disabled=True),
-    #     block=False,
-    #     allow_sending_without_reply=True
-    # )
-    # # Bot instance
-    # application = ApplicationBuilder().token(config.bot_token).defaults(default_param).build()
-
-    # # Conversation handlers
-    # application.add_handler(
-    #     ConversationHandler(
-    #         [CommandHandler("support", init_support_conv)],
-    #         {
-    #             SUPPORT_STATES.STATE_ONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, support_state_one)]
-    #         },
-    #         [CommandHandler("cancel", cancel_support_conv)]
-    #     )
-    # )
-
-    # # main handlers register
-    # main_handlers = load_handlers()
-    # # this need to register before main start handler
-    # main_handlers.insert(0, CommandHandler("start", func_help, filters.Regex("help")))
-    
-    # application.add_handlers(main_handlers)
-    
-    # # Chat Join Request Handler
-    # application.add_handler(ChatJoinRequestHandler(join_request_handler))
-
-    # # filter private chat
-    # application.add_handler(MessageHandler(
-    #     # SERVICE_CHAT is Linked channel with Group
-    #     ~ filters.User(ChatID.SERVICE_CHAT) & filters.ChatType.PRIVATE & (filters.TEXT | filters.CAPTION),
-    #     filter_private_chat.filter_private_chat
-    # ))
-    # filter public chat
-    # application.add_handler(MessageHandler(
-    #     # SERVICE_CHAT is Linked channel with Group
-    #     ~ filters.User(ChatID.SERVICE_CHAT) & filters.ChatType.GROUPS & (filters.TEXT | filters.CAPTION),
-    #     filter_public_chat.filter_public_chat
-    # ))
-    # filter Chat Status Updates
-    # application.add_handler(MessageHandler(filters.StatusUpdate.ALL, chat_status_update))
-
-    # Bot chat tracker (PRIVATE: only if bot is blocked or unblocked; PIUBLIC: any)
-    # application.add_handler(ChatMemberHandler(bot_chats_tracker, ChatMemberHandler.MY_CHAT_MEMBER))
-
-    # Inline Query Handler
-    # application.add_handler(InlineQueryHandler(inline_query.inline_query_handler))
-
-    # Callback query handlers
-    # application.add_handlers([
-    #     CallbackQueryHandler(query_help_menu.query_help_menu, "help_menu_[A-Za-z0-9]+"),
-    #     CallbackQueryHandler(query_bot_settings.query_bot_settings, "bsettings_[A-Za-z0-9]+"),
-    #     CallbackQueryHandler(query_chat_settings.query_chat_settings, "csettings_[A-Za-z0-9]+"),
-    #     CallbackQueryHandler(query_admin_task.query_groupManagement, "admin_[A-Za-z0-9]+"),
-    #     CallbackQueryHandler(query_misc.query_misc, "misc_[A-Za-z0-9]+"),
-    #     CallbackQueryHandler(query_broadcast.query_broadcast, "broadcast_[A-Za-z0-9]+"),
-    #     CallbackQueryHandler(query_db_editing.query_db_editing, "database_[A-Za-z0-9]+")
-    # ])
+def load_handlers():
+    handlers_dir = "app/handlers"
+    for root, dirs, files in os.walk(handlers_dir):
+        for filename in files:
+            if filename.endswith(".py") and not filename.startswith("_"):
+                rel_path = os.path.relpath(root, handlers_dir)
+                if rel_path == ".":
+                    module_path = f"app.handlers.{filename[:-3]}"
+                else:
+                    rel_module_path = rel_path.replace(os.sep, ".")
+                    module_path = f"app.handlers.{rel_module_path}.{filename[:-3]}"
+                __import__(module_path)
 
 
 async def app_init():
@@ -243,7 +144,7 @@ async def app_init():
 
 async def main():
     try:
-        # load_handlers() # Need to load `load_handlers` before bot.run()
+        load_handlers() # Need to load `load_handlers` before bot.run()
         await bot.start()
         await app_init()
     except Exception as e:

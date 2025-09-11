@@ -3,7 +3,6 @@ from pyrogram.types import Chat, Message, InlineKeyboardButton, InlineKeyboardMa
 from pyrogram.enums import MessageOriginType
 
 from app import bot
-from app.helpers import BuildKeyboard
 from app.helpers.args_extractor import extract_cmd_args
 
 @bot.on_message(filters.command("info", ["/", "!", "-", "."]))

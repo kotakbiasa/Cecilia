@@ -2,7 +2,7 @@ from pyrogram import filters
 from pyrogram.types import Chat, Message
 
 from app import bot
-from app.helpers import GroupHelper
+from app.helpers.group_helper import GroupHelper
 from app.utils.database import DBConstants, MemoryDB
 from app.utils.decorators.pm_error import pm_error
 

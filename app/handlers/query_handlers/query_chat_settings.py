@@ -1,17 +1,19 @@
-from telegram import Update
-from telegram.constants import ChatType
-from telegram.ext import ContextTypes
-from telegram.error import BadRequest
-from app import logger, TL_LANG_CODES_URL
+from pyrogram import filters
+from pyrogram.types import CallbackQuery
+from pyrogram.enums import ChatType
+from pyrogram.errors import BadRequest
+
+from app import bot, logger, TL_LANG_CODES_URL
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MemoryDB
-from ..user_handlers.settings import PvtChatSettingsData
-from ..group.chat_settings import GroupChatSettingsData
 
-async def query_chat_settings(_, message: Message):
-    chat = message.chat
-    user = message.from_user or message.sender_chat
-    query = update.callback_query
+from app.handlers.user_handlers.settings import PvtChatSettingsData
+from app.handlers.group.chat_settings import GroupChatSettingsData
+
+@bot.on_callback_query(filters.regex(r"csettings_[A-Za-z0-9]+"))
+async def query_chat_settings(_, query: CallbackQuery):
+    chat = query.message.chat
+    user = query.from_user
 
     # refined query data
     query_data = query.data.removeprefix("csettings_")
@@ -33,8 +35,7 @@ async def query_chat_settings(_, message: Message):
     # verifying user
     user_id = data_center.get("user_id")
     if user_id != user.id:
-        await query.answer("Access Denied!", True)
-        return
+        return await query.answer("Access Denied!", True)
     
     # common variable for chat_data and user_data
     memory_data = MemoryDB.chats_data.get(chat.id) or MemoryDB.users_data.get(chat.id)

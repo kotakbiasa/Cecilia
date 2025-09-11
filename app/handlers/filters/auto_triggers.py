@@ -1,9 +1,9 @@
-from telegram import Message, User, Chat
+from pyrogram.types import Message, User, Chat
 
 async def autoTriggers(message: Message, user: User, chat: Chat, triggers: dict):
     """
-    :param message: Message Class
-    :param user: `message.from_user`
+    :param message: Message class
+    :param user: User class (`message.from_user`)
     :param chat: Chat class
     :param triggers: chat triggers (from chat database)
     """

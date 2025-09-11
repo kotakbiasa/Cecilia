@@ -2,7 +2,7 @@ import json
 from io import BytesIO
 
 from pyrogram import filters
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 from app import bot
 from app.helpers import BuildKeyboard
@@ -130,7 +130,7 @@ async def func_database(_, message: Message):
         )
 
         if victim_info:
-            btn = BuildKeyboard.ubutton([{"User Profile": f"tg://user?id={victim_info.id}"}]) if victim_info.username else None
+            btn = InlineKeyboardMarkup([[InlineKeyboardButton("User Profile", user_id=victim_info.id)]]) if victim_info.username else None
     
     # common message sender for both group chat & private chat database info
     await message.reply_text(text, reply_markup=btn)

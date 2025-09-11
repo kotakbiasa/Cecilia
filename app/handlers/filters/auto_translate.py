@@ -1,4 +1,4 @@
-from telegram import Message, User
+from pyrogram.types import Message, User
 from app import TL_LANG_CODES_URL
 from app.helpers import BuildKeyboard
 from app.modules.translator import translate
@@ -6,7 +6,7 @@ from app.modules.translator import translate
 async def autoTranslate(message: Message, user: User, lang_code: str):
     """
     :param message: Message Class
-    :param user: `message.from_user`
+    :param user: User class (`message.from_user`)
     :param lang_code: Get from user/chat database
     """
     text = message.text or message.caption

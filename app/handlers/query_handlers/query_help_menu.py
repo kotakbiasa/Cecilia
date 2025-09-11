@@ -1,17 +1,20 @@
 import psutil
 from time import time
-from datetime import datetime, timedelta
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.error import BadRequest
-from app import __version__, BOT_UPTIME, logger
+from datetime import timedelta
+
+from pyrogram import filters
+from pyrogram.types import CallbackQuery
+from pyrogram.errors import BadRequest
+
+from app import bot, logger, BOT_UPTIME, __version__
 from app.helpers import BuildKeyboard
 from app.utils.database import DBConstants, MongoDB
-from ..core.help import HelpMenuData
 
-async def query_help_menu(_, message: Message):
-    user = message.from_user or message.sender_chat
-    query = update.callback_query
+from app.handlers.core.help import HelpMenuData
+
+@bot.on_callback_query(filters.regex(r"help_menu_[A-Za-z0-9]+"))
+async def query_help_menu(_, query: CallbackQuery):
+    user = query.from_user
 
     # refined query data
     query_data = query.data.removeprefix("help_menu_")
@@ -42,12 +45,10 @@ async def query_help_menu(_, message: Message):
             "Some command has a silent & delete function! eg. `/s[command]` & `/d[command]` » /sban or /dban etc.</blockquote>"
         )
 
-        btn_data = [
+        btn = BuildKeyboard.cbutton([
             {"Next page ⇒": "help_menu_gm2"},
             {"Back": "help_menu_menu", "Close": "misc_close"}
-        ]
-
-        btn = BuildKeyboard.cbutton(btn_data)
+        ])
     
     elif query_data == "gm2":
         text = (
@@ -68,12 +69,10 @@ async def query_help_menu(_, message: Message):
             "Some command has a silent & delete function! eg. `/s[command]` & `/d[command]` » /sban or /dban etc.</blockquote>"
         )
 
-        btn_data = [
+        btn = BuildKeyboard.cbutton([
             {"⇐ Previous page": "help_menu_gm1"},
             {"Back": "help_menu_menu", "Close": "misc_close"}
-        ]
-
-        btn = BuildKeyboard.cbutton(btn_data)
+        ])
     
     elif query_data == "ai_knowledge":
         text = (
@@ -85,7 +84,9 @@ async def query_help_menu(_, message: Message):
             "<blockquote>**Note:** Send command to get more details about the command functions!</blockquote>"
         )
 
-        btn = BuildKeyboard.cbutton([{"Back": "help_menu_menu", "Close": "misc_close"}])
+        btn = BuildKeyboard.cbutton([
+            {"Back": "help_menu_menu", "Close": "misc_close"}
+        ])
     
     elif query_data == "misc":
         text = (
@@ -116,7 +117,9 @@ async def query_help_menu(_, message: Message):
             "<blockquote>**Note:** Send command to get more details about the command functions!</blockquote>"
         )
         
-        btn = BuildKeyboard.cbutton([{"Back": "help_menu_menu", "Close": "misc_close"}])
+        btn = BuildKeyboard.cbutton([
+            {"Back": "help_menu_menu", "Close": "misc_close"}
+        ])
     
     elif query_data == "owner":
         text = (
@@ -136,7 +139,9 @@ async def query_help_menu(_, message: Message):
             "<blockquote>**Note:** Send command to get more details about the command functions!</blockquote>"
         )
         
-        btn = BuildKeyboard.cbutton([{"Back": "help_menu_menu", "Close": "misc_close"}])
+        btn = BuildKeyboard.cbutton([
+            {"Back": "help_menu_menu", "Close": "misc_close"}
+        ])
     
     elif query_data == "botinfo":
         await query.answer("Getting information...")
@@ -153,7 +158,7 @@ async def query_help_menu(_, message: Message):
         active_users = active_status.count(True)
         inactive_users = active_status.count(False)
 
-        sys_uptime = timedelta(seconds=datetime.now().timestamp() - psutil.boot_time())
+        sys_uptime = timedelta(seconds=time() - psutil.boot_time())
 
         sys_days = sys_uptime.days
         sys_hours, remainder = divmod(sys_uptime.seconds, 3600)
@@ -168,9 +173,9 @@ async def query_help_menu(_, message: Message):
         text = (
             "<blockquote>`**» bot.info()**`</blockquote>\n\n"
 
-            f"**• Name:** {context.bot.first_name}\n"
+            f"**• Name:** {bot.me.first_name}\n"
             f"**• ID:** `{bot.me.id}`\n"
-            f"**• Username:** {context.bot.name}\n\n"
+            f"**• Username:** {f'@{bot.me.username}' if bot.me.username else '-'}\n\n"
 
             f"**• Registered users:** `{t_users_count}`\n"
             f"**• Active users:** `{active_users}`\n"
@@ -181,14 +186,12 @@ async def query_help_menu(_, message: Message):
             f"**• Bot uptime:** `{int(bot_days)}d {int(bot_hours)}h {int(bot_minute)}m`\n"
             f"**• Version (stable):** `{__version__}`"
         )
-
-        btn_data = [
+        
+        btn = BuildKeyboard.cbutton([
             {"Source code": "https://github.com/bishalqx980/tgbot", "Report bug": "https://github.com/bishalqx980/tgbot/issues"},
             {"Developer": "https://t.me/bishalqx680/22"},
             {"Back": "help_menu_menu", "Close": "misc_close"}
-        ]
-        
-        btn = BuildKeyboard.cbutton(btn_data)
+        ])
     
     # global reply
     try:
