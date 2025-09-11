@@ -90,12 +90,12 @@ async def func_database(_, message: Message):
                 f"<blockquote>{custom_welcome_msg}</blockquote>"
             )
         
-        chat_filters = chat_data.get('filters')
-        if chat_filters:
-            filters_file = BytesIO(json.dumps(chat_filters, indent=4).encode())
-            filters_file.name = f"filters [{victim_id}].json"
+        chat_triggers = chat_data.get("triggers")
+        if chat_triggers:
+            triggers_file = BytesIO(json.dumps(chat_triggers, indent=4).encode())
+            triggers_file.name = f"triggers [{victim_id}].json"
 
-            await message.reply_document(filters_file, caption=f"ChatID: `{victim_id}`")
+            await message.reply_document(triggers_file, caption=f"ChatID: `{victim_id}`")
     
     else:
         user_data = MongoDB.find_one(DBConstants.USERS_DATA, "user_id", victim_id) # victim_id as int

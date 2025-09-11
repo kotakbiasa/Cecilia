@@ -54,6 +54,6 @@ async def filter_public_chat(_, message: Message):
         await autoTranslate(message, user, chat_lang)
     
     # Auto Trigers
-    filters = chat_data.get("filters")
-    if filters:
-        await autoTriggers(message, user, chat, filters)
+    triggers = chat_data.get("triggers")
+    if triggers:
+        await autoTriggers(message, user, chat, triggers)

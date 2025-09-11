@@ -60,7 +60,7 @@ async def query_help_menu(_, message: Message):
             "• /lock » Lock the chat (member will be unable to send messages etc.)\n"
             "• /unlock » Unlock the chat (back to normal)\n"
             "• /adminlist » Get chat admins list.\n"
-            "• /filters | /filter | /remove » to see/set/remove custom message/command.\n"
+            "• /triggers | /trigger | /remove » to see/set/remove custom message/command.\n"
             "• /leave » bot will leave the chat.\n"
             "• /settings » Settings of chat\n\n"
 
