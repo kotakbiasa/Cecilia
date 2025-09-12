@@ -1,0 +1,31 @@
+from app import logger, config
+from .database import DBConstants, MemoryDB, MongoDB
+
+def update_database():
+    bot_data = MongoDB.find(DBConstants.BOT_DATA, "_id")
+    if bot_data:
+        data = MongoDB.find_one(DBConstants.BOT_DATA, "_id", bot_data[0])
+        MemoryDB.insert(DBConstants.BOT_DATA, None, data)
+        logger.info("MongoDB database exist! Skiping update process!")
+        return
+    
+    config_data = {
+        "api_id": config.api_id,
+        "api_hash": config.api_hash,
+        "bot_token": config.bot_token,
+        "owner_id": config.owner_id,
+
+        "mongodb_uri": config.mongodb_uri,
+        "db_name": config.db_name,
+
+        "shrinkme_api": config.shrinkme_api,
+        "omdb_api": config.omdb_api,
+        "weather_api": config.weather_api
+    }
+    
+    try:
+        MongoDB.insert(DBConstants.BOT_DATA, config_data)
+        MemoryDB.insert(DBConstants.BOT_DATA, None, config_data)
+        logger.info("Database has been updated from local config file.")
+    except Exception as e:
+        logger.warning(e)

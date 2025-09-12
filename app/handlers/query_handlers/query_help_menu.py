@@ -1,0 +1,202 @@
+import psutil
+from time import time
+from datetime import timedelta
+
+from pyrogram import filters
+from pyrogram.types import CallbackQuery
+from pyrogram.errors import BadRequest
+
+from app import bot, logger, BOT_UPTIME, __version__
+from app.helpers import BuildKeyboard
+from app.utils.database import DBConstants, MongoDB
+
+from app.handlers.core.help import HelpMenuData
+
+@bot.on_callback_query(filters.regex(r"help_menu_[A-Za-z0-9]+"))
+async def query_help_menu(_, query: CallbackQuery):
+    user = query.from_user
+
+    # refined query data
+    query_data = query.data.removeprefix("help_menu_")
+
+    if query_data == "menu":
+        text = HelpMenuData.TEXT
+        btn = BuildKeyboard.cbutton(HelpMenuData.BUTTONS)
+    
+    elif query_data == "gm1":
+        text = (
+            "<blockquote>**Group Management**</blockquote>\n\n"
+
+            "• /id » Show chat/user id\n"
+            "• /invite » Generate chat invite link\n"
+            "• /promote » Promote chat member\n"
+            "• /demote » Demote chat member\n"
+            "• /pin » Pin replied message\n"
+            "• /unpin » Unpin a pinned message\n"
+            "• /unpinall » Unpin all pinned messages\n"
+            "• /ban » Ban chat member\n"
+            "• /unban » Unban chat member\n"
+            "• /kick » Kick chat member\n"
+            "• /kickme » The easy way to out\n"
+            "• /mute » Restrict a member (member will be unable to send messages etc.)\n"
+            "• /unmute » Unrestrict a restricted member\n\n"
+
+            "<blockquote>**Note:** Send command to get more details about the command functions!\n"
+            "Some command has a silent & delete function! eg. `/s[command]` & `/d[command]` » /sban or /dban etc.</blockquote>"
+        )
+
+        btn = BuildKeyboard.cbutton([
+            {"Next page ⇒": "help_menu_gm2"},
+            {"Back": "help_menu_menu", "Close": "misc_close"}
+        ])
+    
+    elif query_data == "gm2":
+        text = (
+            "<blockquote>**Group Management**</blockquote>\n\n"
+
+            "• /warn » Give warning to member (automatic action will be taken by bot if member gets 3 warns)\n"
+            "• /warns » See your warnings in current chat\n"
+            "• /purge » Delete all messages between replied to current message!\n"
+            "• /purgefrom | /purgeto » Delete all messages between `purgefrom` and `purgeto`.\n"
+            "• /lock » Lock the chat (member will be unable to send messages etc.)\n"
+            "• /unlock » Unlock the chat (back to normal)\n"
+            "• /adminlist » Get chat admins list.\n"
+            "• /triggers | /trigger | /remove » to see/set/remove custom message/command.\n"
+            "• /leave » bot will leave the chat.\n"
+            "• /settings » Settings of chat\n\n"
+
+            "<blockquote>**Note:** Send command to get more details about the command functions!\n"
+            "Some command has a silent & delete function! eg. `/s[command]` & `/d[command]` » /sban or /dban etc.</blockquote>"
+        )
+
+        btn = BuildKeyboard.cbutton([
+            {"⇐ Previous page": "help_menu_gm1"},
+            {"Back": "help_menu_menu", "Close": "misc_close"}
+        ])
+    
+    elif query_data == "ai_knowledge":
+        text = (
+            "<blockquote>**AI/LLM Functions**</blockquote>\n\n"
+            
+            "• /imagine » Generate AI image.\n"
+            "• /gpt » Ask any question to AI-LLM\n\n"
+
+            "<blockquote>**Note:** Send command to get more details about the command functions!</blockquote>"
+        )
+
+        btn = BuildKeyboard.cbutton([
+            {"Back": "help_menu_menu", "Close": "misc_close"}
+        ])
+    
+    elif query_data == "misc":
+        text = (
+            "<blockquote>**Misc Functions**</blockquote>\n\n"
+
+            "• /movie » Get Movie info by name or IMDB ID\n"
+            "• /tr » Google translator\n"
+            "• /decode » Convert base64 into text\n"
+            "• /encode » Convert text into base64\n"
+            "• /shorturl » Short URL (shrinkme)\n"
+            "• /ping » Get response of website\n"
+            "• /calc » Normal calculator (supported syntex: +, -, *, /)\n"
+            "• /tts » Convert text into speech (voice)\n"
+            "• /unzip » Unzip any `.zip` file\n"
+            "• /weather » Get current weather info\n"
+            "• /genqr » Generate QR code (image)\n"
+            "• /decqr » Decode QR code (image)\n"
+            "• /imgtolink » Get Image to public link\n"
+            "• /paste » Paste replied text in telegraph (returns link)\n"
+            "• /whisper » Whisper someone in public chat (secretly)\n"
+            "• /ytdl » Download audio/song from youtube\n"
+            "• /id » Show chat/user id\n"
+            "• /info » Show user info\n"
+            "• /psndl » Get playstation (psn/.pkg) games/updates/dlc link (mostly ps3)\n"
+            "• /rap » Generate .rap file `hex_code` (LICENSE file for PSN file, /psndl to get hex code)\n"
+            "• /settings » Settings of chat\n\n"
+
+            "<blockquote>**Note:** Send command to get more details about the command functions!</blockquote>"
+        )
+        
+        btn = BuildKeyboard.cbutton([
+            {"Back": "help_menu_menu", "Close": "misc_close"}
+        ])
+    
+    elif query_data == "owner":
+        text = (
+            "<blockquote>**Owner/Sudo Functions**</blockquote>\n\n"
+
+            "• /say » Send message as bot\n"
+            "• /broadcast » Broadcast message to all active users\n"
+            "• /send » Send message to specified ChatID\n"
+            "• /cadmins » Get adminlist of specified ChatID\n"
+            "• /invitelink » Get invite link of specified ChatID\n"
+            "• /database » Get bot or specified chat database info\n"
+            "• /bsettings » Get bot settings\n"
+            "• /shell » Access/Use system shell\n"
+            "• /log » Get log file (for error handling)\n"
+            "• /sys » Get system info\n\n"
+
+            "<blockquote>**Note:** Send command to get more details about the command functions!</blockquote>"
+        )
+        
+        btn = BuildKeyboard.cbutton([
+            {"Back": "help_menu_menu", "Close": "misc_close"}
+        ])
+    
+    elif query_data == "botinfo":
+        await query.answer("Getting information...")
+
+        database_info = MongoDB.info()
+
+        i_users_data = database_info.get(DBConstants.USERS_DATA)
+        i_chats_data = database_info.get(DBConstants.CHATS_DATA)
+
+        t_users_count = i_users_data.get("quantity") if i_users_data else "Unknown"
+        t_chats_count = i_chats_data.get("quantity") if i_chats_data else "Unknown"
+
+        active_status = MongoDB.find(DBConstants.USERS_DATA, "active_status")
+        active_users = active_status.count(True)
+        inactive_users = active_status.count(False)
+
+        sys_uptime = timedelta(seconds=time() - psutil.boot_time())
+
+        sys_days = sys_uptime.days
+        sys_hours, remainder = divmod(sys_uptime.seconds, 3600)
+        sys_minute = remainder / 60
+
+        bot_uptime = timedelta(seconds=time() - BOT_UPTIME)
+
+        bot_days = bot_uptime.days
+        bot_hours, remainder = divmod(bot_uptime.seconds, 3600)
+        bot_minute = remainder / 60
+
+        text = (
+            "<blockquote>`**» bot.info()**`</blockquote>\n\n"
+
+            f"**• Name:** {bot.me.first_name}\n"
+            f"**• ID:** `{bot.me.id}`\n"
+            f"**• Username:** {f'@{bot.me.username}' if bot.me.username else '-'}\n\n"
+
+            f"**• Registered users:** `{t_users_count}`\n"
+            f"**• Active users:** `{active_users}`\n"
+            f"**• Inactive users:** `{inactive_users}`\n"
+            f"**• Total chats:** `{t_chats_count}`\n\n"
+
+            f"**• System uptime:** `{int(sys_days)}d {int(sys_hours)}h {int(sys_minute)}m`\n"
+            f"**• Bot uptime:** `{int(bot_days)}d {int(bot_hours)}h {int(bot_minute)}m`\n"
+            f"**• Version (stable):** `{__version__}`"
+        )
+        
+        btn = BuildKeyboard.cbutton([
+            {"Source code": "https://github.com/bishalqx980/tgbot", "Report bug": "https://github.com/bishalqx980/tgbot/issues"},
+            {"Developer": "https://t.me/bishalqx680/22"},
+            {"Back": "help_menu_menu", "Close": "misc_close"}
+        ])
+    
+    # global reply
+    try:
+        await query.edit_message_caption(text, reply_markup=btn)
+    except BadRequest:
+        await query.edit_message_text(text, reply_markup=btn)
+    except Exception as e:
+        logger.error(e)
