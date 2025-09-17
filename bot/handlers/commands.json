@@ -299,6 +299,11 @@
             "command": "ytdl",
             "function": "func_ytdl",
             "module": ".handlers.user_handlers.ytdl"
+        },
+        {
+            "command": "bilibili",
+            "function": "func_bilibili",
+            "module": ".handlers.user_handlers.bilibilidl"
         }
     ]
 }
