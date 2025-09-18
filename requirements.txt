@@ -12,4 +12,5 @@ qrcode[pil]==8.2
 pyzbar==0.1.9
 pyzipper==0.3.6
 aiohttp[speedups]
+instaloader==4.14.2
 https://github.com/KSKOP69/youtube-search-python/archive/ksk.zip

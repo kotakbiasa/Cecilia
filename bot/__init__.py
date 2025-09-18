@@ -11,9 +11,9 @@ __version__ = json.load(open("version.json", "rb"))["__version__"] # major.minor
 CONFIG_FILE = "config.env"
 COMMANDS_FILE_PATH = "bot/handlers/commands.json"
 REQUIRED_DIRS = ["downloads", "sys"]
-ORIGINAL_BOT_USERNAME = "MissCiri_bot"
-ORIGINAL_BOT_ID = 6845693976
-DEFAULT_ERROR_CHANNEL_ID = -1002675104487
+ORIGINAL_BOT_USERNAME = "AniCeciliaBot"
+ORIGINAL_BOT_ID = 7720879401
+DEFAULT_ERROR_CHANNEL_ID = -1002306682947
 BOT_UPTIME = time()
 PSNDL_DATABASE_URL = "https://psndl.pages.dev/database.json"
 TL_LANG_CODES_URL = "https://telegra.ph/Language-Code-12-24"
@@ -51,5 +51,5 @@ Developed by
    
     Version: {__version__}
     Library: python-telegram-bot {__ptbversion__}
-    GitHub: https://github.com/bishalqx980
+    GitHub: https://github.com/kotakbiasa
 """)

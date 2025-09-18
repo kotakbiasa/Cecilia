@@ -22,6 +22,9 @@ from telegram.ext import (
 from telegram.error import BadRequest, Conflict, NetworkError, TimedOut
 from telegram.constants import ChatID, ParseMode
 
+from bot.handlers.user_handlers.ytdl import ytdl_callback_handler
+from telegram.ext import CallbackQueryHandler
+
 from . import COMMANDS_FILE_PATH, DEFAULT_ERROR_CHANNEL_ID, RUN_SERVER, bot, logger, config
 from .utils.alive import alive
 from .utils.update_db import update_database
@@ -111,11 +114,12 @@ async def server_alive():
             server_url = f"http://{server_url}"
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(server_url) as response:
+                # Using HEAD request to prevent downloading the body and avoid content-type errors.
+                async with session.head(server_url, timeout=10, allow_redirects=False) as response: # type: aiohttp.ClientResponse
                     if not response.ok:
                         logger.warning(f"{server_url} is down or unreachable. ❌ - code - {response.status}")
         except Exception as e:
-            logger.error(f"{server_url} > {e}")
+            logger.error(f"Server liveness check for {server_url} failed: {e}")
         await asyncio.sleep(180) # 3 min
 
 
@@ -242,6 +246,9 @@ def main():
         CallbackQueryHandler(query_broadcast.query_broadcast, "broadcast_[A-Za-z0-9]+"),
         CallbackQueryHandler(query_db_editing.query_db_editing, "database_[A-Za-z0-9]+")
     ])
+
+    # Registering ytdl callback handler
+    application.add_handler(CallbackQueryHandler(ytdl_callback_handler, pattern="^ytdl:"))
 
     # Error handler
     application.add_error_handler(default_error_handler)

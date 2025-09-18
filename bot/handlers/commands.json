@@ -301,9 +301,29 @@
             "module": ".handlers.user_handlers.ytdl"
         },
         {
-            "command": "bilibili",
-            "function": "func_bilibili",
-            "module": ".handlers.user_handlers.bilibilidl"
+            "command": "fbdl",
+            "function": "func_facebookdl",
+            "module": ".handlers.user_handlers.facebookdl"
+        },
+        {
+            "command": "tiktokdl",
+            "function": "func_tiktokdl",
+            "module": ".handlers.user_handlers.tiktokdl"
+        },
+        {
+            "command": "instadl",
+            "function": "func_instagramdl",
+            "module": ".handlers.user_handlers.instagramdl"
+        },
+        {
+             "command": "hitamkan",
+              "function": "func_penghitaman",
+              "module": ".handlers.user_handlers.penghitaman"
+        },
+        {
+            "command": "pindl",
+            "function": "func_pinterestdl",
+            "module": ".handlers.user_handlers.pinterestdl"
         }
     ]
 }
