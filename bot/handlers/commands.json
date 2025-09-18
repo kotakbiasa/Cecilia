@@ -329,6 +329,31 @@
             "command": "pindl",
             "function": "func_pinterestdl",
             "module": ".handlers.user_handlers.pinterestdl"
+        },
+        {
+            "command": "whatanime",
+            "function": "func_whatanime",
+            "module": ".handlers.user_handlers.whatanime"
+        },
+        {
+            "command": "anime",
+            "function": "func_anime",
+            "module": ".handlers.user_handlers.anime"
+        },
+        {
+            "command": "manga",
+            "function": "func_manga",
+            "module": ".handlers.user_handlers.manga"
+        },
+        {
+            "command": "character",
+            "function": "func_character",
+            "module": ".handlers.user_handlers.character"
+        },
+        {
+            "command": "airing",
+            "function": "func_airing",
+            "module": ".handlers.user_handlers.airing"
         }
     ]
 }

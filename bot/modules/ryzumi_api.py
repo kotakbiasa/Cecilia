@@ -1,57 +1,70 @@
 import aiohttp
 from bot import logger
 
-BASE_API_URL = "https://api.ryzumi.vip/api/"
+BASE_API_URLS = [
+    "https://api.ryzumi.vip/api/",
+    "https://apidl.asepharyana.tech/api/",
+    "https://api-02.ryzumi.vip/api/",
+]
 
 async def _make_api_request(endpoint: str, params: dict, api_name: str):
     """
-    A generic helper to make requests to the Ryzumi API.
+    A generic helper to make requests to the Ryzumi API, with fallbacks.
 
     :param endpoint: The API endpoint path (e.g., "downloader/pinterest").
     :param params: A dictionary of parameters for the request.
     :param api_name: The name of the API for logging purposes (e.g., "Pinterest").
-    :return: A dictionary with the API response, or None if an error occurs.
+    :return: A dictionary with the API response, or None if all fallbacks fail.
     """
-    api_url = f"{BASE_API_URL}{endpoint}"
     headers = {"accept": "application/json"}
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(api_url, params=params, headers=headers) as response:
-                if not response.ok:
+    for base_url in BASE_API_URLS:
+        api_url = f"{base_url}{endpoint}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url, params=params, headers=headers, timeout=30) as response:
+                    if response.ok:
+                        logger.info(f"Successfully fetched from {api_name} API at {api_url}")
+                        return await response.json()
+                    
                     error_text = await response.text()
-                    logger.error(f"{api_name} API request failed with status {response.status}: {error_text}")
-                    return None
-                return await response.json()
-    except Exception as e:
-        logger.error(f"An exception occurred while fetching from {api_name} API: {e}")
-        return None
+                    logger.warning(f"{api_name} API request to {api_url} failed with status {response.status}: {error_text[:200]}")
+        except Exception as e:
+            logger.warning(f"An exception occurred while fetching from {api_name} API at {api_url}: {e}")
+            continue
+    
+    logger.error(f"All API endpoints failed for {api_name} with params {params}.")
+    return None
 
 async def _make_api_request_binary(endpoint: str, params: dict, api_name: str, timeout: int = 600):
     """
-    A generic helper to make requests to the Ryzumi API for binary content.
+    A generic helper to make requests to the Ryzumi API for binary content, with fallbacks.
 
     :param endpoint: The API endpoint path.
     :param params: A dictionary of parameters for the request.
     :param api_name: The name of the API for logging purposes.
     :param timeout: The request timeout in seconds.
-    :return: The binary content (bytes), or None if an error occurs.
+    :return: The binary content (bytes), or None if all fallbacks fail.
     """
-    api_url = f"{BASE_API_URL}{endpoint}"
-    # Headers can be adjusted if other binary endpoints need different accepts
     headers = {"accept": "image/png"}
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(api_url, params=params, headers=headers, timeout=timeout) as response:
-                if not response.ok:
+    for base_url in BASE_API_URLS:
+        api_url = f"{base_url}{endpoint}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url, params=params, headers=headers, timeout=timeout) as response:
+                    if response.ok:
+                        logger.info(f"Successfully fetched binary from {api_name} API at {api_url}")
+                        return await response.read()
+
                     error_text = await response.text()
-                    logger.error(f"{api_name} API request failed with status {response.status}: {error_text}")
-                    return None
-                return await response.read()
-    except Exception as e:
-        logger.error(f"An exception occurred while fetching from {api_name} API: {e}")
-        return None
+                    logger.warning(f"{api_name} API binary request to {api_url} failed with status {response.status}: {error_text[:200]}")
+        except Exception as e:
+            logger.warning(f"An exception occurred while fetching binary from {api_name} API at {api_url}: {e}")
+            continue
+
+    logger.error(f"All API endpoints failed for binary {api_name} with params {params}.")
+    return None
 
 
 async def get_pinterest_media(pinterest_url: str):

@@ -23,7 +23,7 @@ from telegram.error import BadRequest, Conflict, NetworkError, TimedOut
 from telegram.constants import ChatID, ParseMode
 
 from bot.handlers.user_handlers.ytdl import ytdl_callback_handler
-from telegram.ext import CallbackQueryHandler
+from bot.handlers.user_handlers.anime import anime_callback_handler
 
 from . import COMMANDS_FILE_PATH, DEFAULT_ERROR_CHANNEL_ID, RUN_SERVER, bot, logger, config
 from .utils.alive import alive
@@ -184,7 +184,7 @@ def load_handlers():
     return handlers
 
 
-def main():
+async def main():
     default_param = Defaults(
         parse_mode=ParseMode.HTML,
         link_preview_options=LinkPreviewOptions(is_disabled=True),
@@ -193,6 +193,12 @@ def main():
     )
     # Bot instance
     application = ApplicationBuilder().token(config.bot_token).defaults(default_param).build()
+
+    # --- Logic from app_init() moved here ---
+    if RUN_SERVER:
+        alive()  # Starts Flask server in a thread
+    update_database()  # Synchronous, run it before the loop
+    # -----------------------------------------
 
     # Conversation handlers
     application.add_handler(
@@ -250,25 +256,23 @@ def main():
     # Registering ytdl callback handler
     application.add_handler(CallbackQueryHandler(ytdl_callback_handler, pattern="^ytdl:"))
 
+    # Registering anime callback handler
+    application.add_handler(CallbackQueryHandler(anime_callback_handler, pattern="^anime:"))
+
     # Error handler
     application.add_error_handler(default_error_handler)
 
-    # Check Updates
-    application.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
-
-
-async def app_init():
-    if RUN_SERVER:
-        alive() # Server breathing
-    # maintain the sequence
-    update_database()
-    await post_init()
-    await server_alive()
+    # Run the bot and other async tasks concurrently
+    async with application:
+        await post_init()
+        await application.start()
+        # Start polling in the background
+        await application.updater.start_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
+        
+        # Run the server liveness check if enabled (this is a long-running task)
+        if RUN_SERVER:
+            await server_alive()
 
 
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.create_task(app_init())
-    loop.create_task(main())
-    loop.run_forever()
+    asyncio.run(main())

@@ -34,7 +34,7 @@ async def search_youtube(query: str, limit: int = 10):
                 'title': video.get('title'),
                 'duration': video.get('duration'),
                 'link': video.get('link'),
-                'thumbnail': video.get('thumbnails')[0].get('url') if video.get('thumbnails') else None,
+                'thumbnail': video.get('thumbnails')[-1].get('url') if video.get('thumbnails') else None,
                 'artist': video.get('channel', {}).get('name'),
                 'views': views_count,
             })
