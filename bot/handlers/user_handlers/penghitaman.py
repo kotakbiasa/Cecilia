@@ -1,9 +1,9 @@
-import aiohttp
 from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot import logger
 from bot.modules.re_link import RE_LINK
+from bot.modules.ryzumi_api import get_negro_image
 
 async def func_penghitaman(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.effective_message
@@ -41,26 +41,16 @@ async def func_penghitaman(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     sent_message = await message.reply_text("Sedang menghitamkan waifu...")
 
-    api_endpoint = "https://api.ryzumi.vip/api/ai/negro"
-    params = {"url": image_url}
-    if filter_name:
-        params["filter"] = filter_name
-    headers = {"accept": "image/png"}
-
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(api_endpoint, params=params, headers=headers, timeout=300) as response:
-                if not response.ok:
-                    error_text = await response.text()
-                    logger.error(f"API Penghitaman gagal dengan status {response.status}: {error_text}")
-                    await sent_message.edit_text("Maaf, gagal memproses gambar. API mungkin sedang down atau URL tidak valid.")
-                    return
+        image_bytes = await get_negro_image(image_url, filter_name)
 
-                image_bytes = await response.read()
+        if not image_bytes:
+            await sent_message.edit_text("Maaf, gagal memproses gambar. API mungkin sedang down atau URL tidak valid.")
+            return
 
         caption = f"Ini waifu yang telah dihitamkan dengan filter '{filter_name}'." if filter_name else "Ini gambar yang telah dihitamkan."
         await message.reply_photo(photo=image_bytes, caption=caption)
         await sent_message.delete()
     except Exception as e:
         logger.error(f"Gagal dalam proses penghitaman: {e}")
-        await sent_message.edit_text("Terjadi error saat memproses permintaan Anda.")
+        await sent_message.edit_text(f"Terjadi error saat memproses permintaan Anda: {e}")

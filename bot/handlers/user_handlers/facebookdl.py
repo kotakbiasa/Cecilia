@@ -3,11 +3,14 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot import logger
+from bot.modules.re_link import RE_LINK
 from bot.modules.ryzumi_api import get_fbdl_media
 
 async def func_facebookdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
-    url = " ".join(context.args)
+    arg_string = " ".join(context.args)
+    links = RE_LINK.detectLinks(arg_string)
+    url = links[0] if links else None
 
     if not url or ("facebook.com" not in url and "fb.watch" not in url):
         await message.reply_text(

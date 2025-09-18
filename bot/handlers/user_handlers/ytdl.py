@@ -5,6 +5,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from bot.modules.ryzumi_api import get_ytmp3_media, get_ytmp4_media
 from bot.modules.yt_search import search_youtube
+from bot.modules.re_link import RE_LINK
 from bot import logger
 from bot.modules.ytdlp import youtube_download
 
@@ -95,8 +96,17 @@ async def func_ytdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     sent_message = await message.reply_text("Mencari...")
-    if "youtube.com" in query_or_link or "youtu.be" in query_or_link:
-        video_link = query_or_link
+
+    # Try to find a YouTube link first
+    links = RE_LINK.detectLinks(query_or_link)
+    video_link = None
+    for link in links:
+        if "youtube.com" in link or "youtu.be" in link:
+            video_link = link
+            break
+
+    if video_link:
+        # A link was found, proceed with it
         results = await search_youtube(video_link, limit=1)
         if not results:
             await sent_message.edit_text("Gagal mendapatkan detail video dari link.")
@@ -104,6 +114,7 @@ async def func_ytdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
         video_title = results[0].get('title')
         thumbnail = results[0].get('thumbnail')
     else:
+        # No link found, treat the whole thing as a search query
         results = await search_youtube(query_or_link, limit=1)
         if not results:
             await sent_message.edit_text(f"Tidak ada hasil yang ditemukan untuk '<code>{query_or_link}</code>'.")

@@ -27,6 +27,33 @@ async def _make_api_request(endpoint: str, params: dict, api_name: str):
         logger.error(f"An exception occurred while fetching from {api_name} API: {e}")
         return None
 
+async def _make_api_request_binary(endpoint: str, params: dict, api_name: str, timeout: int = 600):
+    """
+    A generic helper to make requests to the Ryzumi API for binary content.
+
+    :param endpoint: The API endpoint path.
+    :param params: A dictionary of parameters for the request.
+    :param api_name: The name of the API for logging purposes.
+    :param timeout: The request timeout in seconds.
+    :return: The binary content (bytes), or None if an error occurs.
+    """
+    api_url = f"{BASE_API_URL}{endpoint}"
+    # Headers can be adjusted if other binary endpoints need different accepts
+    headers = {"accept": "image/png"}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api_url, params=params, headers=headers, timeout=timeout) as response:
+                if not response.ok:
+                    error_text = await response.text()
+                    logger.error(f"{api_name} API request failed with status {response.status}: {error_text}")
+                    return None
+                return await response.read()
+    except Exception as e:
+        logger.error(f"An exception occurred while fetching from {api_name} API: {e}")
+        return None
+
+
 async def get_pinterest_media(pinterest_url: str):
     """
     Fetches media from a Pinterest URL using the Ryzumi API.
@@ -105,3 +132,34 @@ async def get_igdl_media(instagram_url: str):
         return None
     params = {"url": instagram_url}
     return await _make_api_request("downloader/igdl", params, "IGDL")
+
+async def get_waifu2x_image(image_url: str):
+    """
+    Upscales an image using the Waifu2x API.
+
+    :param image_url: The URL of the image to upscale.
+    :return: The upscaled image as bytes, or None if an error occurs.
+    """
+    if not image_url:
+        logger.error("Image URL was not provided for Waifu2x.")
+        return None
+    params = {"url": image_url}
+    # Using the binary request helper with a longer timeout
+    return await _make_api_request_binary("ai/waifu2x", params, "Waifu2x")
+
+async def get_negro_image(image_url: str, filter_name: str = None):
+    """
+    Applies a filter to an image using the 'negro' API.
+
+    :param image_url: The URL of the image to filter.
+    :param filter_name: The name of the filter to apply (optional).
+    :return: The filtered image as bytes, or None if an error occurs.
+    """
+    if not image_url:
+        logger.error("Image URL was not provided for Penghitaman.")
+        return None
+    params = {"url": image_url}
+    if filter_name:
+        params["filter"] = filter_name
+
+    return await _make_api_request_binary("ai/negro", params, "Penghitaman")

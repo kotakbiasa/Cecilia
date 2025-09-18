@@ -320,6 +320,11 @@
               "function": "func_penghitaman",
               "module": ".handlers.user_handlers.penghitaman"
         },
+        {  
+            "command": "waifu2x",
+            "function": "func_waifu2x",
+            "module": ".handlers.user_handlers.waifu2x"
+        },
         {
             "command": "pindl",
             "function": "func_pinterestdl",
