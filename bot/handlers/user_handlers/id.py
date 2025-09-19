@@ -33,7 +33,7 @@ async def func_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text = (
                 f"• {user.full_name}\n"
                 f"  » <b>ID:</b> <code>{user.id}</code>\n"
-                f"• {victim.full_name or victim.title}\n" # this title can cause error (title for channel)
+                f"• {victim.full_name or victim.title}\n" # .full_name for users, .title for channels
                 f"  » <b>ID:</b> <code>{victim.id}</code>\n"
                 f"• <b>ChatID:</b> <code>{chat.id}</code>"
             )

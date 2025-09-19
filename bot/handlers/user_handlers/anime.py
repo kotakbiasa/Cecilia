@@ -121,7 +121,7 @@ def _build_anime_info_layout(anime_data: dict) -> tuple[str, InlineKeyboardMarku
         first_row.append(InlineKeyboardButton("🎬 Trailer", callback_data=f"anime:trailer:{anime_data['id']}"))
     buttons.append(first_row)
 
-    if anime_data.get('characters') and anime_data['characters'].get('nodes'):
+    if anime_data.get('characters') and anime_data['characters'].get('edges'):
         buttons.append([InlineKeyboardButton("Karakter", callback_data=f"anime:chars:{anime_data['id']}")])
     
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -147,18 +147,32 @@ async def anime_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
 
     if action == 'chars':
         title = anime_data['title']['romaji']
-        characters = anime_data.get('characters', {}).get('nodes', [])
+        character_edges = anime_data.get('characters', {}).get('edges', [])
         
-        if not characters:
-            char_list_str = "Tidak ada informasi karakter utama."
+        if not character_edges:
+            caption = f"<b>Karakter: {title}</b>\n\nTidak ada informasi karakter yang tersedia."
         else:
-            char_list = [f"• <code>{char['name']['full']}</code>" for char in characters]
-            char_list_str = "\n".join(char_list)
+            main_chars = []
+            supporting_chars = []
+            for edge in character_edges:
+                char_name = edge.get('node', {}).get('name', {}).get('full')
+                if not char_name:
+                    continue
+                
+                if edge.get('role') == 'MAIN':
+                    main_chars.append(f"• <code>{char_name}</code>")
+                elif edge.get('role') == 'SUPPORTING':
+                    supporting_chars.append(f"• <code>{char_name}</code>")
 
-        caption = (
-            f"<b>Karakter Utama: {title}</b>\n\n"
-            f"{char_list_str}"
-        )
+            caption_parts = [f"<b>Karakter: {title}</b>"]
+
+            if main_chars:
+                caption_parts.append("\n<b>Utama:</b>\n" + "\n".join(main_chars))
+            
+            if supporting_chars:
+                caption_parts.append("\n<b>Pendukung:</b>\n" + "\n".join(supporting_chars))
+
+            caption = "\n".join(caption_parts)
         
         buttons = [[InlineKeyboardButton("« Kembali", callback_data=f"anime:info:{anime_id}")]]
         reply_markup = InlineKeyboardMarkup(buttons)

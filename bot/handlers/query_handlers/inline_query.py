@@ -115,6 +115,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                 }
             })
             
+            # TODO: This is a read-modify-write pattern, which can cause a race condition.
             # Diffrent from normal /whisper cmd
             MemoryDB.insert(DBConstants.DATA_CENTER, "whisper_data", {"whispers": whispers})
 
@@ -147,16 +148,32 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     results.append(inlineQueryMaker(f"❕ user.info({user.full_name})", user_info, description="See your info...!"))
 
+    # Gemini AI
+    if message:
+        results.append(
+            InlineQueryResultArticle(
+                id="gemini_ai_result", # A unique ID to identify this in the chosen result handler
+                title="Ask Gemini AI",
+                input_message_content=InputTextMessageContent(
+                    f"🤔 <b>Gemini:</b> {message}\n\n<i>Sedang berpikir...</i>"
+                ),
+                description=f"Tanyakan pada Gemini: {message}",
+                thumbnail_url="https://i.imgur.com/K2unH4z.png" # A generic AI thumbnail
+            )
+        )
+
     # base64 encode / decode
     try:
         b64_decode = b64decode(message).decode("utf-8")
-        results.append(inlineQueryMaker("📦 Base64: Decode (base64 to text)", f"<code>{b64_decode}</code>", description=b64_decode)) if b64_decode else None
+        if b64_decode:
+            results.append(inlineQueryMaker("📦 Base64: Decode (base64 to text)", f"<code>{b64_decode}</code>", description=b64_decode))
     except:
         pass
 
     try:
         b64_encode = b64encode(message.encode("utf-8")).decode("utf-8")
-        results.append(inlineQueryMaker("📦 Base64: Encode (text to base64)", f"<code>{b64_encode}</code>", description=b64_encode)) if b64_encode else None
+        if b64_encode:
+            results.append(inlineQueryMaker("📦 Base64: Encode (text to base64)", f"<code>{b64_encode}</code>", description=b64_encode))
     except:
         pass
 

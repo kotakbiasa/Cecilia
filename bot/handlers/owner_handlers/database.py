@@ -18,8 +18,7 @@ async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not victim_id:
         database_info = MongoDB.info()
         msg_storage = "<blockquote><b>Database information</b></blockquote>\n\n"
-        for info in database_info:
-            info = database_info[info]
+        for info in database_info.values():
             msg_storage += (
                 f"<b>• Document:</b> <i>{info.get('name')}</i>\n"
                 f"<b>• Quantity:</b> <code>{info.get('quantity')}</code>\n"
@@ -47,6 +46,7 @@ async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text("Invalid ChatID!")
         return
 
+    btn = None
     # if chat_id given
     if "-100" in str(victim_id):
         chat_data = MongoDB.find_one(DBConstants.CHATS_DATA, "chat_id", victim_id) # victim_id as int
@@ -58,7 +58,6 @@ async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
             victim_info = await context.bot.get_chat(victim_id)
         except:
             victim_info = None
-            btn = None
         
         chat_title = victim_info.title if victim_info else chat_data.get('title')
         chat_invite_link = victim_info.invite_link if victim_info else None
@@ -107,7 +106,6 @@ async def func_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
             victim_info = await context.bot.get_chat(victim_id)
         except:
             victim_info = None
-            btn = None
         
         try:
             victim_name = victim_info.mention_html() if victim_info else user_data.get('mention')

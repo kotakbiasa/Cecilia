@@ -1,5 +1,6 @@
 import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from html import escape
 from telegram.ext import ContextTypes
 
 from bot import logger
@@ -39,10 +40,26 @@ async def func_character(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if len(description) > 400:
             description = description[:400] + "..."
 
-        caption = (
-            f"<b>{title}</b>\n\n"
-            f"<blockquote expandable>{description}</blockquote>"
-        )
+        caption_parts = [f"<b>{title}</b>"]
+
+        if description and description != 'Tidak ada deskripsi.':
+            caption_parts.append(f"\n\n<blockquote expandable>{description}</blockquote>")
+
+        # Add media information from the response
+        media_nodes = char_data.get('media', {}).get('nodes', [])
+        if media_nodes:
+            media_list = []
+            # Limit to 5 to avoid a very long message
+            for media in media_nodes[:5]:
+                # Prefer userPreferred, fallback to romaji
+                media_title = media.get('title', {}).get('userPreferred') or media.get('title', {}).get('romaji')
+                if media_title:
+                    media_list.append(f"• <code>{escape(media_title)}</code>")
+            
+            if media_list:
+                caption_parts.append("\n\n<b>Muncul di:</b>\n" + "\n".join(media_list))
+
+        caption = "".join(caption_parts)
 
         buttons = [[InlineKeyboardButton("Lihat di Anilist", url=char_data['siteUrl'])]]
         reply_markup = InlineKeyboardMarkup(buttons)

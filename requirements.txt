@@ -1,4 +1,4 @@
-python-telegram-bot==21.9
+python-telegram-bot==22.4
 python-dotenv==1.1.0
 deep-translator==1.11.4
 pymongo==4.13.0
@@ -13,4 +13,6 @@ pyzbar==0.1.9
 pyzipper==0.3.6
 aiohttp[speedups]
 instaloader==4.14.2
+google-genai==1.38.0
+telegramify-markdown==0.5.1
 https://github.com/KSKOP69/youtube-search-python/archive/ksk.zip

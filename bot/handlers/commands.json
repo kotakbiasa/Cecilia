@@ -354,6 +354,16 @@
             "command": "airing",
             "function": "func_airing",
             "module": ".handlers.user_handlers.airing"
+        },
+        {
+            "command": "animeimg",
+            "function": "func_animeimg",
+            "module": ".handlers.user_handlers.animeimg"
+        },
+        {
+            "command": "nsfwimg",
+            "function": "func_nsfwimg",
+            "module": ".handlers.user_handlers.nsfwimg"
         }
     ]
 }

@@ -157,13 +157,13 @@ async def query_help_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         sys_days = sys_uptime.days
         sys_hours, remainder = divmod(sys_uptime.seconds, 3600)
-        sys_minute = remainder / 60
+        sys_minute = remainder // 60
 
         bot_uptime = timedelta(seconds=time() - BOT_UPTIME)
 
         bot_days = bot_uptime.days
         bot_hours, remainder = divmod(bot_uptime.seconds, 3600)
-        bot_minute = remainder / 60
+        bot_minute = remainder // 60
 
         text = (
             "<blockquote><code><b>» bot.info()</b></code></blockquote>\n\n"

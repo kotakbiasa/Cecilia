@@ -17,6 +17,8 @@ class CONFIG:
         self.omdb_api: Optional[str] = None
         self.weather_api: Optional[str] = None
 
+        self.gemini_api_key: Optional[str] = None  # New Gemini API Key
+
 
     def load_config(self, config_file) -> None:
         """
@@ -37,6 +39,7 @@ class CONFIG:
         self.shrinkme_api = os.getenv("SHRINKME_API")
         self.omdb_api = os.getenv("OMDB_API")
         self.weather_api = os.getenv("WEATHER_API")
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY")  # New Gemini API Key
     
 
     def validate(self) -> bool:

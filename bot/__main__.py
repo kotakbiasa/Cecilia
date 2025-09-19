@@ -10,14 +10,16 @@ from telegram.ext import (
     CommandHandler,
     MessageHandler,
     ChatJoinRequestHandler,
+    ChosenInlineResultHandler,
     ConversationHandler,
     InlineQueryHandler,
     filters,
     CallbackQueryHandler,
     ChatMemberHandler,
     ContextTypes,
-    Defaults
+    Defaults,
 )
+from telegram.request import HTTPXRequest
 
 from telegram.error import BadRequest, Conflict, NetworkError, TimedOut
 from telegram.constants import ChatID, ParseMode
@@ -185,6 +187,15 @@ def load_handlers():
 
 
 async def main():
+    # Configure custom timeouts for the HTTP client to make it more resilient
+    # to network fluctuations.
+    httpx_request = HTTPXRequest(
+        connect_timeout=10.0,  # Time to establish a connection (default: 5.0)
+        read_timeout=20.0,     # Time to wait for a response (default: 5.0)
+        write_timeout=20.0,    # Time to wait for a write operation (default: 5.0)
+        pool_timeout=10.0,     # Time to wait for a connection from the pool (default: 5.0)
+    )
+
     default_param = Defaults(
         parse_mode=ParseMode.HTML,
         link_preview_options=LinkPreviewOptions(is_disabled=True),
@@ -192,7 +203,7 @@ async def main():
         allow_sending_without_reply=True
     )
     # Bot instance
-    application = ApplicationBuilder().token(config.bot_token).defaults(default_param).build()
+    application = ApplicationBuilder().token(config.bot_token).defaults(default_param).request(httpx_request).build()
 
     # --- Logic from app_init() moved here ---
     if RUN_SERVER:
@@ -241,6 +252,7 @@ async def main():
 
     # Inline Query Handler
     application.add_handler(InlineQueryHandler(inline_query.inline_query_handler))
+    # Chosen Inline Result Handler for Gemini
 
     # Callback query handlers
     application.add_handlers([

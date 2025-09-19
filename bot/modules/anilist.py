@@ -45,10 +45,13 @@ query ($search: String) {
         name
       }
     }
-    characters(role: MAIN, sort: [ROLE, RELEVANCE, ID], perPage: 8) {
-      nodes {
-        name {
-          full
+    characters(sort: [ROLE, RELEVANCE, ID], perPage: 16) {
+      edges {
+        role
+        node {
+          name {
+            full
+          }
         }
       }
     }

@@ -64,7 +64,7 @@ async def func_tr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     translated_text = translate(to_translate, lang_code)
     btn = None
 
-    if translated_text == False:
+    if translated_text is False:
         text = "Invalid language code was given! Use /tr to get more details or /settings to set chat language."
         btn = BuildKeyboard.ubutton([{"Language code's": TL_LANG_CODES_URL}])
 

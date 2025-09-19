@@ -15,26 +15,24 @@ async def func_weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await effective_message.reply_text("Oops! Something went wrong! (invalid location name? 🤔)")
         return
     
-    text = (
-        f"<blockquote><b>Location info</b></blockquote>\n\n"
+    text = f"""<blockquote><b>Location info</b></blockquote>
 
-        f"<b>City:</b> <code>{info['location']['name']}</code>\n"
-        f"<b>Country:</b> <code>{info['location']['country']}</code>\n"
-        f"<b>Zone:</b> <code>{info['location']['tz_id']}</code>\n"
-        f"<b>Local time:</b> <code>{info['location']['localtime']}</code>\n\n"
+<b>City:</b> <code>{info['location']['name']}</code>
+<b>Country:</b> <code>{info['location']['country']}</code>
+<b>Zone:</b> <code>{info['location']['tz_id']}</code>
+<b>Local time:</b> <code>{info['location']['localtime']}</code>
 
-        f"<blockquote><b>Weather info</b></blockquote>\n\n"
+<blockquote><b>Weather info</b></blockquote>
 
-        f"<b>Condition:</b> <code>{info['current']['condition']['text']}</code>\n"
-        f"<b>Temp (C):</b> <code>{info['current']['temp_c']}℃</code> <b>feels:</b> <code>{info['current']['feelslike_c']}℃</code>\n"
-        f"<b>Temp (F):</b> <code>{info['current']['temp_f']}℉</code> <b>feels:</b> <code>{info['current']['feelslike_f']}℉</code>\n"
-        f"<b>Humidity:</b> <code>{info['current']['humidity']}%</code>\n\n"
+<b>Condition:</b> <code>{info['current']['condition']['text']}</code>
+<b>Temp (C):</b> <code>{info['current']['temp_c']}℃</code> <b>feels:</b> <code>{info['current']['feelslike_c']}℃</code>
+<b>Temp (F):</b> <code>{info['current']['temp_f']}℉</code> <b>feels:</b> <code>{info['current']['feelslike_f']}℉</code>
+<b>Humidity:</b> <code>{info['current']['humidity']}%</code>
 
-        f"<b>Wind:</b> <code>{info['current']['wind_mph']}mph</code> | <code>{info['current']['wind_kph']}kph</code>\n"
-        f"<b>Wind (Angle):</b> <code>{info['current']['wind_degree']}°</code>\n"
-        f"<b>UV Ray:</b> <code>{info['current']['uv']}</code>\n\n"
+<b>Wind:</b> <code>{info['current']['wind_mph']}mph</code> | <code>{info['current']['wind_kph']}kph</code>
+<b>Wind (Angle):</b> <code>{info['current']['wind_degree']}°</code>
+<b>UV Ray:</b> <code>{info['current']['uv']}</code>
 
-        "<blockquote><b>Note:</b> ⚠ 8 or higher is harmful for skin!</blockquote>"
-    )
+<blockquote><b>Note:</b> ⚠ 8 or higher is harmful for skin!</blockquote>"""
 
     await effective_message.reply_text(text)
