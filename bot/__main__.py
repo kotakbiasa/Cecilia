@@ -250,9 +250,7 @@ async def main():
     # Bot chat tracker (PRIVATE: only if bot is blocked or unblocked; PIUBLIC: any)
     application.add_handler(ChatMemberHandler(bot_chats_tracker, ChatMemberHandler.MY_CHAT_MEMBER))
 
-    # Inline Query Handler
-    application.add_handler(InlineQueryHandler(inline_query.inline_query_handler))
-    # Chosen Inline Result Handler for Gemini
+
 
     # Callback query handlers
     application.add_handlers([
