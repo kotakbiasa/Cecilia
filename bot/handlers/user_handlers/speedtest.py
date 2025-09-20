@@ -21,10 +21,10 @@ async def create_speedtest_image(results: dict) -> BytesIO:
 
     # Image dimensions and colors
     width, height = 800, 450
-    bg_color = (20, 22, 25)
-    text_color = (255, 255, 255)
-    highlight_color = (30, 180, 255)
-    label_color = (150, 150, 150)
+    bg_color = (240, 235, 250)      # Light Lavender
+    text_color = (40, 30, 60)          # Dark Purple
+    highlight_color = (255, 105, 180)  # Hot Pink
+    label_color = (120, 110, 140)      # Muted Purple/Gray
     
     # Create image
     img = Image.new('RGB', (width, height), color=bg_color)
@@ -49,34 +49,36 @@ async def create_speedtest_image(results: dict) -> BytesIO:
 
     # Metrics (Ping, Download, Upload) - Top part
     y_metrics = 120
-    draw.text((width * 0.25, y_metrics), "Ping", font=main_font, fill=text_color, anchor="mt")
-    draw.text((width * 0.25, y_metrics + 40), f"{ping}", font=title_font, fill=text_color, anchor="mt")
-    draw.text((width * 0.25, y_metrics + 80), "ms", font=main_font, fill=text_color, anchor="mt")
 
-    draw.text((width * 0.5, y_metrics), "Download", font=main_font, fill=text_color, anchor="mt")
-    draw.text((width * 0.5, y_metrics + 40), f"{download_speed}", font=title_font, fill=text_color, anchor="mt")
-    draw.text((width * 0.5, y_metrics + 80), "Mbps", font=main_font, fill=text_color, anchor="mt")
+    draw.text((width / 3, y_metrics), "Download", font=main_font, fill=text_color, anchor="mt")
+    draw.text((width / 3, y_metrics + 40), f"{download_speed}", font=title_font, fill=text_color, anchor="mt")
+    draw.text((width / 3, y_metrics + 80), "Mbps", font=main_font, fill=text_color, anchor="mt")
 
-    draw.text((width * 0.75, y_metrics), "Upload", font=main_font, fill=text_color, anchor="mt")
-    draw.text((width * 0.75, y_metrics + 40), f"{upload_speed}", font=title_font, fill=text_color, anchor="mt")
-    draw.text((width * 0.75, y_metrics + 80), "Mbps", font=main_font, fill=text_color, anchor="mt")
+    draw.text((width * 2 / 3, y_metrics), "Upload", font=main_font, fill=text_color, anchor="mt")
+    draw.text((width * 2 / 3, y_metrics + 40), f"{upload_speed}", font=title_font, fill=text_color, anchor="mt")
+    draw.text((width * 2 / 3, y_metrics + 80), "Mbps", font=main_font, fill=text_color, anchor="mt")
 
     # Divider line
     draw.line([(50, 250), (width - 50, 250)], fill=label_color, width=1)
 
     # Client and Server Info - Bottom part
     y_info = 280
+    row_height = 60
+ 
+    # Row 1: ISP and Server Host
     draw.text((50, y_info), "ISP", font=label_font, fill=label_color)
     draw.text((50, y_info + 25), client_info['isp'], font=small_font, fill=text_color)
-    draw.text((50, y_info + 60), "Client Location", font=label_font, fill=label_color)
-    draw.text((50, y_info + 85), client_info['country'], font=small_font, fill=text_color)
-
-    server_location_text = f"{server_info['name']}, {server_info['country']} ({server_info['cc']})"
     draw.text((width/2, y_info), "Server Host", font=label_font, fill=label_color)
     draw.text((width/2, y_info + 25), server_info['sponsor'], font=small_font, fill=text_color)
-    draw.text((width/2, y_info + 60), "Server Location", font=label_font, fill=label_color)
-    draw.text((width/2, y_info + 85), server_location_text, font=small_font, fill=text_color)
     
+    # Row 2: Client Location and Server Location
+    y_row2 = y_info + row_height
+    draw.text((50, y_row2), "Client Location", font=label_font, fill=label_color)
+    draw.text((50, y_row2 + 25), client_info['country'], font=small_font, fill=text_color)
+    server_location_text = f"{server_info['name']}, {server_info['country']} ({server_info['cc']})"
+    draw.text((width/2, y_row2), "Server Location", font=label_font, fill=label_color)
+    draw.text((width/2, y_row2 + 25), server_location_text, font=small_font, fill=text_color)
+
     # Save image to a memory buffer
     img_buffer = BytesIO()
     img.save(img_buffer, format='PNG')
@@ -94,7 +96,7 @@ async def func_speedtest(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Run synchronous speedtest code in a separate thread to avoid blocking
         def do_speedtest():
-            s = speedtest.Speedtest()
+            s = speedtest.Speedtest(secure=True)
             s.get_best_server()
             s.download(threads=None)
             s.upload(threads=None)
@@ -114,13 +116,11 @@ async def func_speedtest(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         caption = (
             "<b>📊 Hasil Speed Test</b>\n\n"
+            f"<b>Ping:</b> {ping} ms\n\n"
             f"<b>ISP:</b> <code>{client_info['isp']}</code>\n"
             f"<b>Lokasi Klien:</b> <code>{client_info['country']}</code>\n\n"
             f"<b>Host Server:</b> <code>{server_info['sponsor']}</code>\n"
-            f"<b>Lokasi Server:</b> <code>{server_info['name']}, {server_info['country']} ({server_info['cc']})</code>\n\n"
-            f"<b>Ping:</b> {ping} ms\n"
-            f"<b>⬇️ Download:</b> <code>{download_speed} Mbps</code>\n"
-            f"<b>⬆️ Upload:</b> <code>{upload_speed} Mbps</code>"
+            f"<b>Lokasi Server:</b> <code>{server_info['name']}, {server_info['country']} ({server_info['cc']})</code>"
         )
         await message.reply_photo(photo=image_buffer, caption=caption)
         await sent_message.delete()
