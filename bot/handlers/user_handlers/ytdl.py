@@ -12,85 +12,188 @@ from bot.modules.ytdlp import youtube_download
 async def _download_and_send_audio(message, youtube_link: str):
     """Helper function to download audio from a YouTube link and send it."""
     try:
+        # --- Metode 1: Ryzumi API ---
+        await message.edit_caption(caption="Mencoba mengunduh via API...")
         response_data = await get_ytmp3_media(youtube_link)
-        if not (response_data and response_data.get("url")):
-            error_detail = response_data.get("message", "Pastikan URL valid.") if response_data else "Gagal mendapatkan respons dari API."
-            await message.edit_caption(caption=f"Maaf, gagal memproses permintaan audio. {error_detail}")
+        audio_url = response_data.get("url") if response_data else None
+
+        if isinstance(audio_url, str) and audio_url.startswith("http"):
+            try:
+                title = response_data.get("title", "Audio YouTube")
+                thumbnail_url = response_data.get("thumbnail")
+                thumbnail_content = None
+
+                await message.edit_caption(caption="Mengunduh audio ke server...")
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(audio_url, timeout=300) as resp:
+                        if not resp.ok:
+                            raise ValueError(f"API download failed with status {resp.status}")
+                        audio_content = await resp.read()
+
+                    if thumbnail_url:
+                        async with session.get(thumbnail_url) as thumb_resp:
+                            if thumb_resp.ok:
+                                thumbnail_content = await thumb_resp.read()
+
+                await message.edit_caption(caption="Mengunggah audio ke Telegram...")
+                performer = response_data.get("author", "Unknown")
+                views = response_data.get("views", 0)
+                author_url = response_data.get("authorUrl")
+                video_url = response_data.get("videoUrl", youtube_link)
+                artist_line = f"<a href='{author_url}'>{performer}</a>" if author_url else performer
+                caption = (
+                    f"<b>{title}</b>\n\n"
+                    f"<b>Artis:</b> {artist_line}\n"
+                    f"<b>Dilihat:</b> {views:,}\n\n"
+                    f"<b>Source:</b> <a href='{video_url}'>YouTube</a>"
+                )
+                await message.reply_audio(audio=audio_content, title=title, performer=performer, caption=caption, thumbnail=thumbnail_content, write_timeout=600)
+                await message.delete()
+                return  # Sukses dengan API
+            except Exception as api_e:
+                logger.warning(f"Metode API gagal: {api_e}. Beralih ke yt-dlp.")
+
+        logger.warning(f"API ytmp3 gagal atau mengembalikan URL tidak valid: {audio_url}. Beralih ke yt-dlp.")
+
+        # --- Metode 2: yt-dlp Fallback ---
+        await message.edit_caption(caption="API gagal, mencoba dengan metode unduh alternatif (yt-dlp)...")
+        download_info = await youtube_download(url=youtube_link, is_video=False)
+
+        if not download_info or not download_info.get('filepath'):
+            await message.edit_caption(caption="Maaf, semua metode unduhan gagal. Video mungkin dilindungi atau tidak tersedia.")
             return
 
-        audio_url = response_data["url"]
-        title = response_data.get("title", "Audio YouTube")
-        thumbnail_url = response_data.get("thumbnail")
+        filepath = download_info['filepath']
+        title = download_info.get('title', 'Audio YouTube')
+        performer = download_info.get('artist')
+        duration = download_info.get('duration')
+        thumbnail_path = download_info.get('thumbnail_path')
+        
         thumbnail_content = None
+        if thumbnail_path and os.path.exists(thumbnail_path):
+            with open(thumbnail_path, 'rb') as f:
+                thumbnail_content = f.read()
 
-        await message.edit_caption(caption="Mengunduh audio ke server...")
-        async with aiohttp.ClientSession() as session:
-            async with session.get(audio_url, timeout=300) as resp:
-                if not resp.ok:
-                    await message.edit_caption(caption=f"Gagal mengunduh audio. Coba manual: {audio_url}")
-                    return
-                audio_content = await resp.read()
-
-            if thumbnail_url:
-                async with session.get(thumbnail_url) as thumb_resp:
-                    if thumb_resp.ok:
-                        thumbnail_content = await thumb_resp.read()
+        caption = f"<b>{title}</b>\n\n<i>Diunduh dengan yt-dlp.</i>"
 
         await message.edit_caption(caption="Mengunggah audio ke Telegram...")
-        performer = response_data.get("author", "Unknown")
-        views = response_data.get("views", 0)
-        author_url = response_data.get("authorUrl")
-        video_url = response_data.get("videoUrl", youtube_link)
-        artist_line = f"<a href='{author_url}'>{performer}</a>" if author_url else performer
-        caption = (
-            f"<b>{title}</b>\n\n"
-            f"<b>Artis:</b> {artist_line}\n"
-            f"<b>Dilihat:</b> {views:,}\n\n"
-            f"<b>Source:</b> <a href='{video_url}'>YouTube</a>"
-        )
-        await message.reply_audio(audio=audio_content, title=title, performer=performer, caption=caption, thumbnail=thumbnail_content, write_timeout=600)
+        with open(filepath, 'rb') as f:
+            await message.reply_audio(
+                audio=f, 
+                title=title, 
+                performer=performer, 
+                caption=caption, 
+                thumbnail=thumbnail_content, 
+                duration=int(duration) if duration else None,
+                write_timeout=600
+            )
         await message.delete()
+        
+        # Cleanup
+        try:
+            os.remove(filepath)
+            if thumbnail_path and os.path.exists(thumbnail_path):
+                os.remove(thumbnail_path)
+        except OSError as e:
+            logger.error(f"Error membersihkan file yt-dlp: {e}")
+
     except Exception as e:
-        logger.error(f"Gagal mengirim audio YouTube: {e}")
+        logger.error(f"Gagal mengirim audio YouTube: {e}", exc_info=True)
         await message.edit_caption(caption="Gagal mengirim audio. Kemungkinan file terlalu besar atau terjadi error.")
 
 async def _download_and_send_video(message, youtube_link: str, quality: str):
     """Helper function to download video from a YouTube link and send it."""
     try:
+        # --- Metode 1: Ryzumi API ---
+        await message.edit_caption(caption=f"Mencoba mengunduh video {quality}p via API...")
         response_data = await get_ytmp4_media(youtube_link, quality)
-        if not (response_data and response_data.get("url")):
-            error_detail = response_data.get("message", "Kualitas tidak tersedia.") if response_data else "Gagal mendapatkan respons dari API."
-            await message.edit_caption(caption=f"Maaf, gagal memproses permintaan video. {error_detail}")
+        video_url = response_data.get("url") if response_data else None
+
+        if isinstance(video_url, str) and video_url.startswith("http"):
+            try:
+                title = response_data.get("title", "Video YouTube")
+                await message.edit_caption(caption="Mengunduh video ke server...")
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(video_url, timeout=600) as resp:
+                        if not resp.ok:
+                            raise ValueError(f"API download failed with status {resp.status}")
+                        video_content = await resp.read()
+
+                await message.edit_caption(caption="Mengunggah video ke Telegram...")
+                performer = response_data.get("author", "Unknown")
+                views = response_data.get("views", 0)
+                author_url = response_data.get("authorUrl")
+                video_url_page = response_data.get("videoUrl", youtube_link)
+                artist_line = f"<a href='{author_url}'>{performer}</a>" if author_url else performer
+                caption = (
+                    f"<b>{title}</b>\n\n"
+                    f"<b>Artis:</b> {artist_line}\n"
+                    f"<b>Dilihat:</b> {views:,}\n\n"
+                    f"<b>Source:</b> <a href='{video_url_page}'>YouTube</a>"
+                )
+                await message.reply_video(video=video_content, caption=caption, write_timeout=600)
+                await message.delete()
+                return  # Sukses dengan API
+            except Exception as api_e:
+                logger.warning(f"Metode API untuk video gagal: {api_e}. Beralih ke yt-dlp.")
+
+        logger.warning(f"API ytmp4 gagal atau mengembalikan URL tidak valid: {video_url}. Beralih ke yt-dlp.")
+
+        # --- Metode 2: yt-dlp Fallback ---
+        await message.edit_caption(caption="API gagal, mencoba dengan metode unduh alternatif (yt-dlp)...")
+        download_info = await youtube_download(url=youtube_link, is_video=True, quality=quality)
+
+        if not download_info or not download_info.get('filepath'):
+            await message.edit_caption(caption="Maaf, semua metode unduhan gagal. Video mungkin dilindungi atau tidak tersedia.")
             return
 
-        video_url = response_data["url"]
-        title = response_data.get("title", "Video YouTube")
-        await message.edit_caption(caption="Mengirim video ke Telegram...")
-        performer = response_data.get("author", "Unknown")
-        views = response_data.get("views", 0)
-        author_url = response_data.get("authorUrl")
-        video_url_page = response_data.get("videoUrl", youtube_link)
-        artist_line = f"<a href='{author_url}'>{performer}</a>" if author_url else performer
-        caption = (
-            f"<b>{title}</b>\n\n"
-            f"<b>Artis:</b> {artist_line}\n"
-            f"<b>Dilihat:</b> {views:,}\n\n"
-            f"<b>Source:</b> <a href='{video_url_page}'>YouTube</a>"
-        )
-        await message.reply_video(video=video_url, caption=caption, write_timeout=600)
+        filepath = download_info['filepath']
+        title = download_info.get('title', 'Video YouTube')
+        duration = download_info.get('duration')
+        width = download_info.get('width')
+        height = download_info.get('height')
+        thumbnail_path = download_info.get('thumbnail_path')
+        
+        thumbnail_content = None
+        if thumbnail_path and os.path.exists(thumbnail_path):
+            with open(thumbnail_path, 'rb') as f:
+                thumbnail_content = f.read()
+
+        caption = f"<b>{title}</b>\n\n<i>Diunduh dengan yt-dlp.</i>"
+
+        await message.edit_caption(caption="Mengunggah video ke Telegram...")
+        with open(filepath, 'rb') as f:
+            await message.reply_video(
+                video=f, 
+                caption=caption, 
+                duration=int(duration) if duration else None,
+                width=width,
+                height=height,
+                thumbnail=thumbnail_content,
+                write_timeout=600
+            )
         await message.delete()
+        
+        # Cleanup
+        try:
+            os.remove(filepath)
+            if thumbnail_path and os.path.exists(thumbnail_path):
+                os.remove(thumbnail_path)
+        except OSError as e:
+            logger.error(f"Error membersihkan file yt-dlp: {e}")
+
     except Exception as e:
-        logger.error(f"Gagal mengirim video YouTube: {e}")
+        logger.error(f"Gagal mengirim video YouTube: {e}", exc_info=True)
         await message.edit_caption(caption="Gagal mengirim video. Kemungkinan file terlalu besar atau terjadi error.")
 
-async def func_ytdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def func_youtube(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.effective_message
     query_or_link = " ".join(context.args)
 
     if not query_or_link:
         await message.reply_text(
-            "Gunakan <code>/ytdl [URL atau Judul]</code> untuk mencari atau mengunduh dari YouTube.\n"
-            "Contoh: <code>/ytdl Oasis - Stand By Me</code>",
+            "Gunakan <code>/youtube [URL atau Judul]</code> untuk mencari atau mengunduh dari YouTube.\n"
+            "Contoh: <code>/youtube Oasis - Stand By Me</code>",
             disable_web_page_preview=True
         )
         return
@@ -123,11 +226,11 @@ async def func_ytdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
         video_title = results[0].get('title')
         thumbnail = results[0].get('thumbnail')
 
-    context.user_data['ytdl_link'] = video_link
+    context.user_data['youtube_link'] = video_link
     keyboard = [
         [
-            InlineKeyboardButton("🎧 Audio", callback_data="ytdl:format:audio"),
-            InlineKeyboardButton("🎬 Video", callback_data="ytdl:format:video"),
+            InlineKeyboardButton("🎧 Audio", callback_data="youtube:format:audio"),
+            InlineKeyboardButton("🎬 Video", callback_data="youtube:format:video"),
         ]
     ]
     await sent_message.delete()
@@ -137,16 +240,16 @@ async def func_ytdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-async def ytdl_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def youtube_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
 
     callback_data = query.data.split(':')
     action_type = callback_data[1]
 
-    youtube_link = context.user_data.get('ytdl_link')
+    youtube_link = context.user_data.get('youtube_link')
     if not youtube_link:
-        await query.edit_message_caption(caption="Sesi telah berakhir. Silakan mulai lagi dengan perintah /ytdl.", reply_markup=None)
+        await query.edit_message_caption(caption="Sesi telah berakhir. Silakan mulai lagi dengan perintah /youtube.", reply_markup=None)
         return
 
     if action_type == "format":
@@ -157,8 +260,8 @@ async def ytdl_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
         elif media_format == "video":
             keyboard = [
                 [
-                    InlineKeyboardButton("480p", callback_data="ytdl:quality:480"),
-                    InlineKeyboardButton("720p", callback_data="ytdl:quality:720"),
+                    InlineKeyboardButton("480p", callback_data="youtube:quality:480"),
+                    InlineKeyboardButton("720p", callback_data="youtube:quality:720"),
                 ]
             ]
             await query.edit_message_caption(caption="Pilih kualitas video:", reply_markup=InlineKeyboardMarkup(keyboard))

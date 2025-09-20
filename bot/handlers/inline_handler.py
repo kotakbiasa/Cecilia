@@ -191,9 +191,8 @@ async def _handle_anilist_search(query: Update.inline_query, message: str, conte
         )
 
     if not results:
-        await context.bot.answer_inline_query(
-            query.id,
-            results=[],
+        await query.answer(
+            [],
             switch_pm_text=f"Tidak ada hasil untuk '{search_query}'",
             switch_pm_parameter="inline_no_results"
         )

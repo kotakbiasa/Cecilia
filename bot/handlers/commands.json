@@ -296,8 +296,8 @@
             "module": ".handlers.user_handlers.weather"
         },
         {
-            "command": "ytdl",
-            "function": "func_ytdl",
+            "command": "youtube",
+            "function": "func_youtube",
             "module": ".handlers.user_handlers.ytdl"
         },
         {

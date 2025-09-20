@@ -6,8 +6,7 @@ from bot import logger
 from bot.modules.anilist import search_anime
 from bot.modules.ryzumi_api import get_ytmp4_media
 from bot.handlers.query_handlers.message_builder import (
-    build_anime_info_message,
-    clean_html,
+    build_anime_info_message
 )
 
 async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -37,23 +36,34 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         caption, reply_markup = await _build_anime_info_layout(anime_data)
 
-        primary_image_url = anime_data['siteUrl'].replace("anilist.co/anime/", "img.anili.st/media/")
-        fallback_image_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
+        # Construct image URL using img.anili.st service, which is often higher quality
+        thumbnail_url = anime_data['siteUrl'].replace("anilist.co/anime/", "img.anili.st/media/")
 
         try:
-            await message.reply_photo(photo=primary_image_url, caption=caption, reply_markup=reply_markup)
+            # Kirim sebagai foto dengan caption untuk menampilkan gambar di atas
+            await message.reply_photo(
+                photo=thumbnail_url,
+                caption=caption,
+                reply_markup=reply_markup
+            )
             await sent_message.delete()
             return
         except Exception as e:
-            logger.warning(f"Gagal mengirim foto dengan URL primer {primary_image_url}: {e}. Mencoba fallback.")
+            logger.warning(f"Gagal mengirim dengan thumbnail_url {thumbnail_url}: {e}. Mencoba fallback.")
 
-        if fallback_image_url:
+        # Fallback to bannerImage or coverImage if the primary URL fails
+        fallback_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
+        if fallback_url:
             try:
-                await message.reply_photo(photo=fallback_image_url, caption=caption, reply_markup=reply_markup)
+                await message.reply_photo(
+                    photo=fallback_url,
+                    caption=caption,
+                    reply_markup=reply_markup
+                )
                 await sent_message.delete()
                 return
             except Exception as final_e:
-                logger.error(f"Gagal mengirim foto dengan URL fallback {fallback_image_url}: {final_e}. Mengirim sebagai teks.")
+                logger.error(f"Gagal mengirim dengan fallback_url {fallback_url}: {final_e}")
         
         # If all image attempts fail, send as text by editing the wait message
         await sent_message.edit_text(caption, reply_markup=reply_markup)
@@ -97,7 +107,7 @@ async def anime_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
 
     anime_data = context.user_data.get(f"anime_{anime_id}")
     if not anime_data:
-        await query.edit_message_text(text="Sesi telah berakhir. Silakan mulai pencarian baru.", reply_markup=None)
+        await query.edit_message_caption(caption="Sesi telah berakhir. Silakan mulai pencarian baru.", reply_markup=None)
         return
 
     if action == 'chars':
@@ -132,17 +142,11 @@ async def anime_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         buttons = [[InlineKeyboardButton("« Kembali", callback_data=f"anime:info:{anime_id}")]]
         reply_markup = InlineKeyboardMarkup(buttons)
         
-        if query.message.photo:
-            await query.edit_message_caption(caption=caption, reply_markup=reply_markup)
-        else:
-            await query.edit_message_text(text=caption, reply_markup=reply_markup)
+        await query.edit_message_caption(caption=caption, reply_markup=reply_markup)
 
     elif action == 'info':
         caption, reply_markup = await _build_anime_info_layout(anime_data)
-        if query.message.photo:
-            await query.edit_message_caption(caption=caption, reply_markup=reply_markup)
-        else:
-            await query.edit_message_text(text=caption, reply_markup=reply_markup)
+        await query.edit_message_caption(caption=caption, reply_markup=reply_markup)
 
     elif action == 'trailer':
         await query.edit_message_reply_markup(reply_markup=None)
