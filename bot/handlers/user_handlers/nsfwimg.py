@@ -214,7 +214,30 @@ async def func_nsfwimg(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                     
                     for i in range(0, len(media_group), 10):
                         chunk = media_group[i:i+10]
-                        await message.reply_media_group(media=chunk)
+                        try:
+                            await message.reply_media_group(media=chunk)
+                        except Exception as e:
+                            if "photo_invalid_dimensions" in str(e).lower():
+                                logger.warning(f"NSFW Media group failed due to invalid dimensions. Sending one by one. Error: {e}")
+                                photo_chunk_data = small_photos[i:i+10]
+
+                                for idx, photo_item in enumerate(photo_chunk_data):
+                                    caption_to_send = photo_item["caption"] if i == 0 and idx == 0 else None
+                                    try:
+                                        await message.reply_photo(photo=photo_item["content"], caption=caption_to_send, parse_mode='HTML' if caption_to_send else None)
+                                    except Exception as photo_error:
+                                        error_str = str(photo_error).lower()
+                                        if "invalid_dimensions" in error_str:
+                                            logger.warning(f"NSFW Photo send failed ({photo_error}), beralih ke dokumen: {photo_item['url']}")
+                                            filename = photo_item['url'].split('/')[-1].split('?')[0]
+                                            if not filename or '.' not in filename:
+                                                ext = 'gif' if 'gif' in photo_item['content_type'] else 'jpg'
+                                                filename = f"media_{i+idx}.{ext}"
+                                            await message.reply_document(document=photo_item["content"], caption=caption_to_send, parse_mode='HTML' if caption_to_send else None, filename=filename, write_timeout=600)
+                                        else:
+                                            raise photo_error
+                            else:
+                                raise e
                 elif len(small_photos) == 1:
                     photo_item = small_photos[0]
                     try:

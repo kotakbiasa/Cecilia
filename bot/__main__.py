@@ -24,6 +24,7 @@ from telegram.request import HTTPXRequest
 from telegram.error import BadRequest, Conflict, NetworkError, TimedOut
 from telegram.constants import ChatID, ParseMode
 
+from bot.handlers.inline_handler import inline_handler
 from bot.handlers.user_handlers.ytdl import ytdl_callback_handler
 from bot.handlers.user_handlers.anime import anime_callback_handler
 
@@ -49,7 +50,6 @@ from .handlers.core.help import func_help
 from .handlers.group.chat_join_req import join_request_handler
 
 from .handlers.query_handlers import (
-    inline_query,
     query_admin_task,
     query_bot_settings,
     query_chat_settings,
@@ -262,6 +262,9 @@ async def main():
         CallbackQueryHandler(query_broadcast.query_broadcast, "broadcast_[A-Za-z0-9]+"),
         CallbackQueryHandler(query_db_editing.query_db_editing, "database_[A-Za-z0-9]+")
     ])
+
+    # Inline query handler
+    application.add_handler(InlineQueryHandler(inline_handler))
 
     # Registering ytdl callback handler
     application.add_handler(CallbackQueryHandler(ytdl_callback_handler, pattern="^ytdl:"))

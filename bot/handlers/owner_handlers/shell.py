@@ -1,5 +1,6 @@
 import subprocess
 from io import BytesIO
+import asyncio
 from time import time
 
 from telegram import Update
@@ -16,15 +17,18 @@ async def func_shell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     command = " ".join(context.args).replace("'", "")
     
     if not command:
-        await message.reply_text("Use <code>/shell dir/ls</code> [linux/Windows Depend on your hosting server]")
+        await message.reply_text("Gunakan <code>/shell dir/ls</code> [Tergantung server hosting Anda, linux/Windows]")
         return
     
-    sent_message = await message.reply_text("<b>⌊ please wait... ⌉</b>")
+    sent_message = await message.reply_text("<b>⌊ mohon tunggu... ⌉</b>")
     
     time_executing = time()
 
+    # Run the blocking subprocess call in a separate thread to avoid blocking the event loop
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        result = await asyncio.to_thread(
+            subprocess.run, command, shell=True, capture_output=True, text=True, timeout=60
+        )
     except Exception as e:
         await sent_message.edit_text(str(e))
         return
@@ -32,7 +36,7 @@ async def func_shell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     time_executed = time()
     
     if not result.stdout and not result.stderr:
-        await sent_message.edit_text("<b>⌊ None ⌉</b>")
+        await sent_message.edit_text("<b>⌊ Kosong ⌉</b>")
         return
 
     result = result.stdout if result.stdout else result.stderr
@@ -44,4 +48,4 @@ async def func_shell(update: Update, context: ContextTypes.DEFAULT_TYPE):
         shell.name = "shell.txt"
 
         await sent_message.delete()
-        await message.reply_document(shell, f"<b>Command</b>: {command}\n<b>Execute time</b>: {(time_executed - time_executing):.2f}s")
+        await message.reply_document(shell, f"<b>Perintah</b>: {command}\n<b>Waktu eksekusi</b>: {(time_executed - time_executing):.2f}s")

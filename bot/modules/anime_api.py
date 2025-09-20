@@ -33,7 +33,7 @@ NEKOSIA = {
 }
 
 NEKOBOT = {
-    "4k", "coffee", "food", "holo", "kanna", "kemonomimi", "neko", "swimsuit"
+    "coffee", "food", "holo", "kanna", "kemonomimi", "neko"
 }
 
 NEKOSMOE = {

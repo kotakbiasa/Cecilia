@@ -10,7 +10,8 @@ import instaloader
 from telegram import Update, InputMediaPhoto, InputMediaVideo
 from telegram.ext import ContextTypes
 
-from bot import logger
+# Impor objek config dan logger dari modul bot utama.
+from bot import config, logger
 from bot.modules.ryzumi_api import get_igdl_media
 
 # --- Instaloader setup ---
@@ -47,6 +48,38 @@ L = instaloader.Instaloader(
     rate_controller=lambda ctx: SimpleRateController(ctx, 2), # Using the custom controller
     quiet=True,
 )
+
+# --- Penanganan Sesi ---
+SESSION_FILE = ".instagram_session"
+
+try:
+    # Dapatkan kredensial dari objek config.
+    IG_USERNAME = getattr(config, 'ig_username', None)
+    IG_PASSWORD = getattr(config, 'ig_password', None)
+
+    if not IG_USERNAME:
+        logger.info("Instagram: Tidak ada username, berjalan dalam mode publik.")
+    else:
+        session_loaded = False
+        if os.path.exists(SESSION_FILE):
+            try:
+                logger.info(f"Instagram: Mencoba memuat sesi untuk '{IG_USERNAME}' dari file...")
+                L.load_session_from_file(IG_USERNAME, SESSION_FILE)
+                logger.info("Instagram: Sesi berhasil dimuat.")
+                session_loaded = True
+            except Exception as e:
+                logger.warning(f"Instagram: Gagal memuat sesi dari file (mungkin korup atau kedaluwarsa): {e}")
+
+        if not session_loaded:
+            if IG_PASSWORD:
+                logger.info(f"Instagram: Mencoba login baru sebagai {IG_USERNAME}...")
+                L.login(IG_USERNAME, IG_PASSWORD)
+                L.save_session_to_file(SESSION_FILE)
+                logger.info("Instagram: Login berhasil dan sesi disimpan.")
+            else:
+                logger.info("Instagram: Tidak dapat memuat sesi dan tidak ada password. Berjalan dalam mode publik.")
+except Exception as e:
+    logger.error(f"Instagram: Gagal memuat sesi atau login: {e}. Berjalan dalam mode publik.")
 
 def _extract_shortcode(url: str) -> str | None:
     """Extracts shortcode from Instagram URL."""
@@ -109,7 +142,7 @@ async def func_instagramdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Build caption from Instaloader
             caption_parts = []
             if post_caption:
-                caption_parts.append(f"<blockquote>{escape(post_caption)}</blockquote>")
+                caption_parts.append(f"<blockquote expandable>{escape(post_caption)}</blockquote>")
             caption_parts.append(f"<b>Source:</b> <a href='{url}'>Instagram</a>")
             caption = "\n\n".join(caption_parts)
 
@@ -134,7 +167,7 @@ async def func_instagramdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
             caption_text = (response_data.get("caption") or media_items[0].get("caption") or "").strip()
             caption_parts = []
             if caption_text:
-                caption_parts.append(f"<blockquote>{escape(caption_text)}</blockquote>")
+                caption_parts.append(f"<blockquote expandable>{escape(caption_text)}</blockquote>")
             caption_parts.append(f"<b>Source:</b> <a href='{url}'>Instagram</a>")
             caption = "\n\n".join(caption_parts)
 

@@ -9,13 +9,13 @@ async def func_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = " ".join(context.args)
 
     if not url:
-        await effective_message.reply_text("Use <code>/ping url</code>\nE.g. <code>/ping https://google.com</code>")
+        await effective_message.reply_text("Gunakan <code>/ping [url]</code>\nContoh: <code>/ping https://google.com</code>")
         return
     
     if url[0:4] != "http":
         url = f"http://{url}"
 
-    sent_message = await effective_message.reply_text(f"Pinging {url}\nPlease wait...")
+    sent_message = await effective_message.reply_text(f"Melakukan ping ke {url}\nMohon tunggu...")
     start_time = time()
     try:
         async with aiohttp.ClientSession() as session:
@@ -28,33 +28,33 @@ async def func_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
                 status_codes = {
                     200: "✅ Online (OK)",
-                    201: "✅ Created",
-                    202: "✅ Accepted",
-                    204: "⚠️ No Content",
-                    301: "➡️ Moved Permanently",
-                    302: "➡️ Found (Redirect)",
-                    400: "❌ Bad Request",
-                    401: "🔒 Unauthorized",
-                    403: "🚫 Forbidden",
-                    404: "❌ Not Found",
-                    408: "⏳ Request Timeout",
-                    500: "🔥 Internal Server Error",
-                    502: "⚠️ Bad Gateway",
-                    503: "⚠️ Service Unavailable"
+                    201: "✅ Dibuat",
+                    202: "✅ Diterima",
+                    204: "⚠️ Tanpa Konten",
+                    301: "➡️ Dipindahkan Permanen",
+                    302: "➡️ Ditemukan (Redirect)",
+                    400: "❌ Permintaan Buruk",
+                    401: "🔒 Tidak Diizinkan",
+                    403: "🚫 Dilarang",
+                    404: "❌ Tidak Ditemukan",
+                    408: "⏳ Waktu Permintaan Habis",
+                    500: "🔥 Kesalahan Server Internal",
+                    502: "⚠️ Gateway Buruk",
+                    503: "⚠️ Layanan Tidak Tersedia"
                 }
 
-                status = status_codes.get(response.status, "⚠️ Unknown Status")
+                status = status_codes.get(response.status, "⚠️ Status Tidak Diketahui")
                 text = (
-                    f"Site: {url}\n"
-                    f"R.time: <code>{response_time}</code>\n"
-                    f"R.code: <code>{response.status}</code>\n"
-                    f"Status: <code>{status}</code>"
+                    f"<b>Situs:</b> {url}\n"
+                    f"<b>Waktu Respons:</b> <code>{response_time}</code>\n"
+                    f"<b>Kode Respons:</b> <code>{response.status}</code>\n"
+                    f"<b>Status:</b> <code>{status}</code>"
                 )
     except aiohttp.ServerTimeoutError:
-        text = "Error: Request timeout."
+        text = "<b>Error:</b> Waktu permintaan habis."
     except aiohttp.ServerConnectionError:
-        text = "Error: Connection error."
+        text = "<b>Error:</b> Kesalahan koneksi."
     except Exception:
-        text = "Oops! Something went wrong!"
+        text = "<b>Oops!</b> Terjadi kesalahan!"
     
-    await sent_message.edit_text(f"<b>{text}</b>")
+    await sent_message.edit_text(text)

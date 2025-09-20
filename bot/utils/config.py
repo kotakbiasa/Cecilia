@@ -19,6 +19,9 @@ class CONFIG:
 
         self.gemini_api_key: Optional[str] = None  # New Gemini API Key
 
+        self.ig_username: Optional[str] = None
+        self.ig_password: Optional[str] = None
+
 
     def load_config(self, config_file) -> None:
         """
@@ -40,6 +43,10 @@ class CONFIG:
         self.omdb_api = os.getenv("OMDB_API")
         self.weather_api = os.getenv("WEATHER_API")
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")  # New Gemini API Key
+
+        # ----- INSTAGRAM SETTINGS -----
+        self.ig_password = os.getenv("IG_PASSWORD")
+        self.ig_username = os.getenv("IG_USERNAME")
     
 
     def validate(self) -> bool:

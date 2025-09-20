@@ -1,20 +1,14 @@
-import re
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions
 from telegram.ext import ContextTypes
-from calendar import month_name
 import aiohttp
 
 from bot import logger
 from bot.modules.anilist import search_anime
 from bot.modules.ryzumi_api import get_ytmp4_media
-
-def clean_html(raw_html: str) -> str:
-    """Menghapus tag HTML dari string."""
-    if not raw_html:
-        return ""
-    cleanr = re.compile('<.*?>')
-    cleantext = re.sub(cleanr, '', raw_html)
-    return cleantext
+from bot.handlers.query_handlers.message_builder import (
+    build_anime_info_message,
+    clean_html,
+)
 
 async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Mencari informasi anime di Anilist."""
@@ -41,27 +35,39 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         anime_id = anime_data['id']
         context.user_data[f"anime_{anime_id}"] = anime_data
 
-        caption, reply_markup = _build_anime_info_layout(anime_data)
+        caption, reply_markup = await _build_anime_info_layout(anime_data)
 
         # Construct image URL using img.anili.st service, which is often higher quality
         thumbnail_url = anime_data['siteUrl'].replace("anilist.co/anime/", "img.anili.st/media/")
 
         try:
-            await message.reply_photo(photo=thumbnail_url, caption=caption, reply_markup=reply_markup)
+            # Kirim sebagai teks dengan pratinjau link untuk menampilkan gambar
+            # Karakter &#8203; adalah "zero-width space" untuk menyembunyikan link dari teks caption
+            final_caption = f"<a href='{thumbnail_url}'>&#8203;</a>{caption}"
+            await message.reply_text(
+                text=final_caption,
+                reply_markup=reply_markup,
+                link_preview_options=LinkPreviewOptions(is_disabled=False, url=thumbnail_url)
+            )
             await sent_message.delete()
             return
         except Exception as e:
-            logger.warning(f"Gagal mengirim foto dengan URL {thumbnail_url}: {e}. Mencoba fallback.")
+            logger.warning(f"Gagal mengirim dengan pratinjau link {thumbnail_url}: {e}. Mencoba fallback.")
 
         # Fallback to bannerImage or coverImage if the primary URL fails
         fallback_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
         if fallback_url:
+            final_caption_fallback = f"<a href='{fallback_url}'>&#8203;</a>{caption}"
             try:
-                await message.reply_photo(photo=fallback_url, caption=caption, reply_markup=reply_markup)
+                await message.reply_text(
+                    text=final_caption_fallback,
+                    reply_markup=reply_markup,
+                    link_preview_options=LinkPreviewOptions(is_disabled=False, url=fallback_url)
+                )
                 await sent_message.delete()
                 return
             except Exception as final_e:
-                logger.error(f"Gagal mengirim foto dengan URL fallback {fallback_url}: {final_e}")
+                logger.error(f"Gagal mengirim dengan pratinjau link fallback {fallback_url}: {final_e}")
         
         # If all image attempts fail, send as text by editing the wait message
         await sent_message.edit_text(caption, reply_markup=reply_markup)
@@ -70,46 +76,9 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Gagal dalam proses pencarian anime: {e}")
         await sent_message.edit_text(f"Terjadi error saat memproses permintaan Anda: {e}")
 
-def _build_anime_info_layout(anime_data: dict) -> tuple[str, InlineKeyboardMarkup]:
+async def _build_anime_info_layout(anime_data: dict) -> tuple[str, InlineKeyboardMarkup]:
     """Membangun caption dan keyboard untuk tampilan info utama anime."""
-    title = anime_data['title']['romaji']
-    if anime_data['title']['english']:
-        title = f"{title} ({anime_data['title']['english']})"
-    
-    description = clean_html(anime_data.get('description', 'Tidak ada deskripsi.'))
-    if len(description) > 400:
-        description = description[:400] + "..."
-
-    status = anime_data.get('status', 'N/A').replace('_', ' ').title()
-    
-    start_date = anime_data.get('startDate')
-    date_str = "N/A"
-    if start_date and all(start_date.get(k) for k in ['year', 'month', 'day']):
-        try:
-            # Use month_name for a more readable date
-            date_str = f"{month_name[start_date['month']]} {start_date['day']}, {start_date['year']}"
-        except (IndexError, TypeError):
-            # Fallback for invalid month numbers
-            date_str = f"{start_date.get('day', '')}-{start_date.get('month', '')}-{start_date.get('year', '')}"
-
-    studio = "N/A"
-    if anime_data.get('studios') and anime_data['studios'].get('nodes'):
-        studio = anime_data['studios']['nodes'][0]['name']
-    
-    duration = f"{anime_data.get('duration', 'N/A')} menit" if anime_data.get('duration') else 'N/A'
-
-    caption = (
-        f"<b>{title}</b>\n\n"
-        f"<b>Format:</b> {anime_data.get('format', 'N/A')}\n"
-        f"<b>Status:</b> {status}\n"
-        f"<b>Episode:</b> {anime_data.get('episodes', 'N/A')}\n"
-        f"<b>Durasi:</b> {duration} per episode\n"
-        f"<b>Tanggal Rilis:</b> {date_str}\n"
-        f"<b>Studio:</b> {studio}\n"
-        f"<b>Skor:</b> {anime_data.get('averageScore', 0) / 10}/10\n"
-        f"<b>Genre:</b> {', '.join(anime_data.get('genres', []))}\n\n"
-        f"<blockquote expandable>{description}</blockquote>"
-    )
+    caption = await build_anime_info_message(anime_data)
 
     buttons = []
     first_row = [InlineKeyboardButton("Lihat di Anilist", url=anime_data['siteUrl'])]
@@ -180,7 +149,7 @@ async def anime_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         await query.edit_message_caption(caption=caption, reply_markup=reply_markup)
 
     elif action == 'info':
-        caption, reply_markup = _build_anime_info_layout(anime_data)
+        caption, reply_markup = await _build_anime_info_layout(anime_data)
         await query.edit_message_caption(caption=caption, reply_markup=reply_markup)
 
     elif action == 'trailer':
@@ -208,7 +177,16 @@ async def anime_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         
         # Build caption with description from the API response
         trailer_title = video_data.get("title", anime_data['title']['romaji'])
-        trailer_desc = video_data.get("description")
+        trailer_desc_en = video_data.get("description")
+        trailer_desc = ""
+        from bot.modules.translator import translate
+
+        if trailer_desc_en:
+            translated_desc = await asyncio.to_thread(translate, trailer_desc_en, 'id')
+            if translated_desc:
+                trailer_desc = translated_desc
+            else:
+                trailer_desc = trailer_desc_en # Fallback
 
         caption = f"<b>Trailer: {trailer_title}</b>"
         if trailer_desc:

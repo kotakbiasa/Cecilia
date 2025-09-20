@@ -13,7 +13,7 @@ async def func_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     re_msg = message.reply_to_message
     
     if not re_msg:
-        await message.reply_text("Reply a message to broadcast!")
+        await message.reply_text("Balas sebuah pesan untuk disiarkan!")
         return
     
     # variables
@@ -34,8 +34,8 @@ async def func_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     broadcastVoice = re_msg.voice.file_id if re_msg.voice else None
 
     broadcastButton = BuildKeyboard.cbutton([
-        {"📩 Forward": "broadcast_value_forward", "📌 Pin": "broadcast_value_pin"},
-        {"✅ Send": "broadcast_send", "✖️ Close": "misc_close"}
+        {"📩 Teruskan": "broadcast_value_forward", "📌 Sematkan": "broadcast_value_pin"},
+        {"✅ Kirim": "broadcast_send", "✖️ Tutup": "misc_close"}
     ])
 
     broadcastData = {
@@ -64,7 +64,7 @@ async def func_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif broadcastPhoto:
         await message.reply_photo(photo=broadcastPhoto, caption=broadcastCaption, reply_markup=broadcastButton)
     elif broadcastDocument:
-        await message.reply_document(document=broadcastDocument, caption=broadcastCaption, filename=broadcastCaption, reply_markup=broadcastButton)
+        await message.reply_document(document=broadcastDocument, caption=broadcastCaption, filename=broadcastDocument_filename, reply_markup=broadcastButton)
     elif broadcastVideo:
         await message.reply_video(video=broadcastVideo, caption=broadcastCaption, reply_markup=broadcastButton)
     elif broadcastVideo_note:
@@ -74,4 +74,4 @@ async def func_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif broadcastVoice:
         await message.reply_voice(voice=broadcastVoice, caption=broadcastCaption, reply_markup=broadcastButton)
     else:
-        await message.text("Error: unknown filetype! The file isn't supported for broadcast!")
+        await message.reply_text("Error: tipe file tidak dikenal! File tidak didukung untuk siaran!")

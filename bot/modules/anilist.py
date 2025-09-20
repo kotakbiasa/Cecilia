@@ -55,6 +55,11 @@ query ($search: String) {
         }
       }
     }
+    nextAiringEpisode {
+      airingAt
+      timeUntilAiring
+      episode
+    }
   }
 }
 """
@@ -92,6 +97,14 @@ query ($search: String) {
             large
         }
         description(asHtml: false)
+        media(sort: POPULARITY_DESC, perPage: 5) {
+            nodes {
+                title {
+                    romaji
+                    userPreferred
+                }
+            }
+        }
     }
 }
 """
