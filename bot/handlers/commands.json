@@ -364,6 +364,11 @@
             "command": "nsfwimg",
             "function": "func_nsfwimg",
             "module": ".handlers.user_handlers.nsfwimg"
+        },
+        {
+            "command": "speedtest",
+            "function": "func_speedtest",
+            "module": ".handlers.user_handlers.speedtest"
         }
     ]
 }
