@@ -188,6 +188,11 @@
             "function": "func_sys",
             "module": ".handlers.owner_handlers.sys"
         },
+        {
+            "command": "update, restart",
+            "function": "func_update",
+            "module": ".handlers.owner_handlers.update"
+        }
 
         
         {
