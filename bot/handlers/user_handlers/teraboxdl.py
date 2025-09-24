@@ -6,7 +6,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from bot import logger
-from bot.modules.terabox import get_info, get_download_link, extract_shorturl
+from bot.modules.terabox import get_download_link
 
 def format_size(size_bytes):
     """Formats size in bytes to a human-readable string."""
@@ -34,56 +34,26 @@ async def func_teraboxdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sent_message = await message.reply_text("🔍 Menganalisis tautan Terabox...")
 
     try:
-        shorturl = extract_shorturl(url)
-        if not shorturl:
-            await sent_message.edit_text("URL Terabox tidak valid. Pastikan URL Anda benar.")
-            return
+        # Fungsi get_download_link sekarang menangani semua logika
+        result = await asyncio.to_thread(get_download_link, url)
 
-        await sent_message.edit_text(f"ℹ️ Mendapatkan informasi file untuk <code>{shorturl}</code>...")
-        
-        info = await asyncio.to_thread(get_info, shorturl)
-
-        if not info or not info.get("ok"):
-            error_msg = info.get("message", "Gagal mendapatkan informasi dari API.") if info else "API tidak merespons."
+        if result.get('status') != 'success':
+            error_msg = result.get("message", "Terjadi kesalahan yang tidak diketahui.")
             await sent_message.edit_text(f"❌ Gagal: {escape(error_msg)}")
             return
 
-        if not info.get("list"):
-            await sent_message.edit_text("❌ Tidak ada file yang ditemukan di tautan ini.")
-            return
+        file_name = result.get("file_name", "N/A")
+        file_size = format_size(result.get("size"))
+        download_link = result.get("download_link")
 
-        # For simplicity, we'll process the first file in the list.
-        file_data = info["list"][0]
-        file_name = file_data.get("server_filename", "N/A")
-        file_size = format_size(file_data.get("size"))
-
-        await sent_message.edit_text(
-            f"✅ File ditemukan!\n\n"
-            f"<b>Nama:</b> <code>{escape(file_name)}</code>\n"
-            f"<b>Ukuran:</b> <code>{file_size}</code>\n\n"
-            f"🔗 Mendapatkan link unduhan..."
-        )
-
-        params = {
-            'shareid': int(info['shareid']),
-            'uk': int(info['uk']),
-            'sign': str(info['sign']),
-            'timestamp': int(info['timestamp']),
-            'fs_id': int(file_data['fs_id'])
-        }
-
-        download_info = await asyncio.to_thread(get_download_link, params, shorturl=shorturl)
-
-        if not download_info or not download_info.get("ok") or not download_info.get("downloadLink"):
-            error_msg = download_info.get("message", "Gagal mendapatkan link unduhan.") if download_info else "API tidak merespons."
-            await sent_message.edit_text(f"❌ Gagal: {escape(error_msg)}")
-            return
-
-        download_link = download_info["downloadLink"]
         buttons = [[InlineKeyboardButton("📥 Unduh File", url=download_link)]]
         reply_markup = InlineKeyboardMarkup(buttons)
 
-        await sent_message.edit_text(f"✅ Link unduhan siap!\n\n<b>Nama:</b> <code>{escape(file_name)}</code>", reply_markup=reply_markup)
+        caption = (f"✅ Link unduhan siap!\n\n"
+                   f"<b>Nama:</b> <code>{escape(file_name)}</code>\n"
+                   f"<b>Ukuran:</b> <code>{file_size}</code>")
+
+        await sent_message.edit_text(caption, reply_markup=reply_markup)
 
     except Exception as e:
         logger.error(f"Gagal memproses TeraboxDL: {e}", exc_info=True)
