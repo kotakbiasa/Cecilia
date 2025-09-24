@@ -3,7 +3,6 @@ import html
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from bot.utils.helpers import get_command_args
 from bot.modules.teraboxdl import terabox_download
 
 
@@ -13,7 +12,7 @@ async def func_teraboxdl(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Initiates the download process for a given Terabox URL.
     """
     message = update.effective_message
-    args = get_command_args(message)
+    args = " ".join(context.args)
 
     if not args:
         await message.reply_text(
