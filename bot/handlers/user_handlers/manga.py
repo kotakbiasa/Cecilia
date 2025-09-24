@@ -23,7 +23,7 @@ async def func_manga(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await sent_message.edit_text(f"Maaf, manga dengan nama '<code>{query}</code>' tidak ditemukan.")
             return
 
-        caption = build_manga_info_message(manga_data)
+        caption = await build_manga_info_message(manga_data)
 
         buttons = [[InlineKeyboardButton("Lihat di Anilist", url=manga_data['siteUrl'])]]
         reply_markup = InlineKeyboardMarkup(buttons)

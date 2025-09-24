@@ -59,13 +59,19 @@ def _format_airing_time(total_seconds: int) -> str:
         
     return ", ".join(parts) if parts else "sekarang"
 
-def build_anime_info_message_md(anime_data: dict, is_inline: bool = False) -> str:
+async def build_anime_info_message_md(anime_data: dict, is_inline: bool = False) -> str:
     """Membangun teks caption untuk anime dalam format HTML."""
     title = anime_data['title']['romaji']
     native_title = anime_data['title'].get('native', '')    
     msg = f"<b>{escape(title)}</b> (<code>{escape(native_title)}</code>)\n\n"
 
     description_en = clean_html(anime_data.get('description', ''))
+    description_id = ""
+    if description_en:
+        try:
+            description_id = await asyncio.to_thread(translate, description_en, 'id')
+        except Exception as e:
+            logger.error(f"Gagal menerjemahkan deskripsi anime: {e}")
 
     status = anime_data.get('status', 'N/A').replace('_', ' ').title()
     duration = f"{anime_data.get('duration', 'N/A')} Per Ep." if anime_data.get('duration') else 'N/A'
@@ -88,12 +94,13 @@ def build_anime_info_message_md(anime_data: dict, is_inline: bool = False) -> st
         studio_names = [s['name'] for s in studios]
         msg += f"<b>Studios</b>: <code>{escape(', '.join(studio_names))}</code>\n"
 
-    if description_en:
-        msg += f"\n<b>Description</b>: <blockquote expandable>{escape(description_en)}</blockquote>"
+    final_description = description_id or description_en
+    if final_description:
+        msg += f"\n<b>Description</b>: <blockquote expandable>{escape(final_description)}</blockquote>"
 
     return msg
 
-def build_manga_info_message(manga_data: dict, target_user: str | None = None, is_inline: bool = False) -> str:
+async def build_manga_info_message(manga_data: dict, target_user: str | None = None, is_inline: bool = False) -> str:
     """Membangun teks caption untuk manga."""
     title = manga_data['title']['romaji']
     if manga_data['title']['english']:
@@ -103,7 +110,13 @@ def build_manga_info_message(manga_data: dict, target_user: str | None = None, i
     if target_user:
         caption_parts.append(f"Untuk {escape(target_user)},\n\n")
 
-    description = clean_html(manga_data.get('description', 'Tidak ada deskripsi.'))
+    description_en = clean_html(manga_data.get('description', ''))
+    description_id = ""
+    if description_en:
+        try:
+            description_id = await asyncio.to_thread(translate, description_en, 'id')
+        except Exception as e:
+            logger.error(f"Gagal menerjemahkan deskripsi manga: {e}")
     status = manga_data.get('status', 'N/A').replace('_', ' ').title()
     
     title_link = f"<b><a href=\"{manga_data['siteUrl']}\">{title}</a></b>" if is_inline else f"<b>{title}</b>"
@@ -116,11 +129,13 @@ def build_manga_info_message(manga_data: dict, target_user: str | None = None, i
         f"<b>Volume:</b> {manga_data.get('volumes', 'N/A')}\n",
         f"<b>Skor:</b> {manga_data.get('averageScore', 0) / 10 if manga_data.get('averageScore') else 'N/A'}/10\n",
         f"<b>Genre:</b> {', '.join(manga_data.get('genres', []))}\n\n",
-        f"<blockquote expandable>{description}</blockquote>",
     ])
+    final_description = description_id or description_en
+    if final_description:
+        caption_parts.append(f"<blockquote expandable>{escape(final_description)}</blockquote>")
     return "".join(caption_parts)
 
-def build_character_info_message(char_data: dict, target_user: str | None = None, is_inline: bool = False) -> str:
+async def build_character_info_message(char_data: dict, target_user: str | None = None, is_inline: bool = False) -> str:
     """Membangun teks caption untuk karakter."""
     title = char_data['name']['full']
     if char_data['name']['native']:
@@ -131,13 +146,20 @@ def build_character_info_message(char_data: dict, target_user: str | None = None
         caption_parts.append(f"Untuk {escape(target_user)},\n\n")
 
     description_html = char_data.get('description', '')
-    description = clean_html(description_html)
+    description_en = clean_html(description_html)
+    description_id = ""
+    if description_en:
+        try:
+            description_id = await asyncio.to_thread(translate, description_en, 'id')
+        except Exception as e:
+            logger.error(f"Gagal menerjemahkan deskripsi karakter: {e}")
 
     title_link = f"<b><a href=\"{char_data['siteUrl']}\">{title}</a></b>" if is_inline else f"<b>{title}</b>"
     caption_parts.append(title_link)
 
-    if description:
-        caption_parts.append(f"\n\n<blockquote expandable>{escape(description)}</blockquote>")
+    final_description = description_id or description_en
+    if final_description:
+        caption_parts.append(f"\n\n<blockquote expandable>{escape(final_description)}</blockquote>")
 
     media_nodes = char_data.get('media', {}).get('nodes', [])
     if media_nodes and not is_inline: # Don't show media in inline results to keep it clean

@@ -28,7 +28,7 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await sent_message.edit_text("Anime tidak ditemukan.")
             return
 
-        caption = build_anime_info_message_md(anime_data)
+        caption = await build_anime_info_message_md(anime_data)
         
         info_url = anime_data.get("siteUrl")
         trailer_url = None

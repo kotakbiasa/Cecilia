@@ -144,14 +144,14 @@ async def _handle_anilist_search(query: Update.inline_query, message: str, conte
 
     # Proses hasil anime
     if anime_data:
-        message_content = build_anime_info_message_md(anime_data)
+        message_content = await build_anime_info_message_md(anime_data, is_inline=True)
         reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Lihat di Anilist", url=anime_data['siteUrl'])]])
         results.append(
             InlineQueryResultArticle(
                 id=f"anime_{anime_data['id']}",
                 title=f"Anime: {anime_data['title']['romaji']}",
                 description=f"Format: {anime_data.get('format', 'N/A')} | Skor: {anime_data.get('averageScore') / 10 if anime_data.get('averageScore') else 'N/A'}",
-                input_message_content=InputTextMessageContent(message_content, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False),
+                input_message_content=InputTextMessageContent(message_content, parse_mode=ParseMode.HTML, disable_web_page_preview=False),
                 thumbnail_url=anime_data.get('coverImage', {}).get('extraLarge'),
                 reply_markup=reply_markup,
             )
@@ -159,7 +159,7 @@ async def _handle_anilist_search(query: Update.inline_query, message: str, conte
 
     # Proses hasil manga
     if manga_data:
-        message_content = build_manga_info_message(manga_data, target_user, is_inline=True)
+        message_content = await build_manga_info_message(manga_data, target_user, is_inline=True)
         reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Lihat di Anilist", url=manga_data['siteUrl'])]])
         results.append(
             InlineQueryResultArticle(
@@ -174,7 +174,7 @@ async def _handle_anilist_search(query: Update.inline_query, message: str, conte
 
     # Proses hasil karakter
     if char_data:
-        message_content = build_character_info_message(char_data, target_user, is_inline=True)
+        message_content = await build_character_info_message(char_data, target_user, is_inline=True)
         reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Lihat di Anilist", url=char_data['siteUrl'])]])
         first_media_title = "N/A"
         if char_data.get('media', {}).get('nodes'):

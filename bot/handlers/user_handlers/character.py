@@ -24,7 +24,7 @@ async def func_character(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await sent_message.edit_text(f"Karakter '<code>{query}</code>' tidak ditemukan.")
             return
 
-        caption = build_character_info_message(char_data)
+        caption = await build_character_info_message(char_data)
 
         buttons = [[InlineKeyboardButton("Lihat di Anilist", url=char_data['siteUrl'])]]
         reply_markup = InlineKeyboardMarkup(buttons)
