@@ -89,11 +89,7 @@ def build_anime_info_message_md(anime_data: dict, is_inline: bool = False) -> st
         msg += f"<b>Studios</b>: <code>{escape(', '.join(studio_names))}</code>\n"
 
     if description_en:
-        if len(description_en) > 400:
-            description = escape(description_en[:400].strip()) + "..."
-            msg += f"\n<b>Description</b>: <blockquote>{description} <a href='{anime_data['siteUrl']}'>Read More</a></blockquote>"
-        else:
-            msg += f"\n<b>Description</b>: <blockquote>{escape(description_en)}</blockquote>"
+        msg += f"\n<b>Description</b>: <blockquote expandable>{escape(description_en)}</blockquote>"
 
     return msg
 
@@ -141,12 +137,7 @@ def build_character_info_message(char_data: dict, target_user: str | None = None
     caption_parts.append(title_link)
 
     if description:
-        if len(description) > 400:
-            description = description[:400].strip() + "..."
-            read_more_link = f" <a href='{char_data['siteUrl']}'>Baca Selengkapnya</a>"
-            caption_parts.append(f"\n\n<blockquote expandable>{escape(description)}{read_more_link}</blockquote>")
-        else:
-            caption_parts.append(f"\n\n<blockquote expandable>{escape(description)}</blockquote>")
+        caption_parts.append(f"\n\n<blockquote expandable>{escape(description)}</blockquote>")
 
     media_nodes = char_data.get('media', {}).get('nodes', [])
     if media_nodes and not is_inline: # Don't show media in inline results to keep it clean
