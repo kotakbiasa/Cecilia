@@ -1,123 +1,66 @@
 import asyncio
 import aiohttp
 import json
-import re
+import urllib.parse
 from bot import logger
 
-API_BASE_URL = "https://terabox.hnn.workers.dev/api"
-DEFAULT_HEADERS = {
-    "Accept": "*/*",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Connection": "keep-alive",
-    "Host": "terabox.hnn.workers.dev",
-    "Referer": "https://terabox.hnn.workers.dev/",
-    "Sec-Fetch-Dest": "empty",
-    "Sec-Fetch-Mode": "cors",
-    "Sec-Fetch-Site": "same-origin",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-    # Headers tambahan dari contoh PHP untuk meniru browser dengan lebih baik
-    "sec-ch-ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"macOS"',
-}
-
-async def _get_download_link(session: aiohttp.ClientSession, data: dict) -> dict | None:
-    """
-    Fetches the final download link for a specific file ID.
-    """
-    headers = {
-        "Content-Type": "application/json",
-        "Origin": "https://terabox.hnn.workers.dev",
-        "Referer": "https://terabox.hnn.workers.dev/",
-        "User-Agent": DEFAULT_HEADERS["User-Agent"], # Add User-Agent here as well
-    }
-    try:
-        async with session.post(f"{API_BASE_URL}/get-download", json=data, headers=headers, timeout=30) as response:
-            if not response.ok:
-                logger.error(f"Terabox API (get-download) failed with status: {response.status}")
-                return None
-
-            res_json = await response.json()
-            if res_json.get("ok"):
-                size_in_mb = int(data.get('size', 0)) / (1024 * 1024)
-                return {
-                    "filename": data.get("filename"),
-                    "link": res_json.get("downloadLink"),
-                    "size_mb": round(size_in_mb, 2)
-                }
-            else:
-                logger.warning(f"Terabox API (get-download) returned not ok: {res_json}")
-                return None
-    except asyncio.TimeoutError:
-        logger.error("Timeout error while fetching Terabox download link.")
-        return None
-    except (aiohttp.ClientError, json.JSONDecodeError) as e:
-        logger.error(f"Error fetching Terabox download link: {e}", exc_info=False)
-        return None
+API_URL_TEMPLATE = "https://teradlrobot.cheemsbackup.workers.dev/?url={}"
 
 async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
     """
-    Converts a Terabox share URL into a direct download link.
+    Converts a Terabox share URL into a direct download link using the new API endpoint.
 
     :param url: The Terabox share URL (e.g., https://terabox.com/s/...).
     :param pwd: The password for the link, if any.
     :return: A list of dictionaries containing file info, or None on failure.
     """
-    match = re.search(r'/s/([^/?]*)', url)
-    if not match:
-        logger.warning(f"Invalid Terabox URL format: {url}")
+    if not url:
+        logger.warning("Terabox URL was not provided.")
         return None
-    shorturl = match.group(1)
 
-    async with aiohttp.ClientSession(headers=DEFAULT_HEADERS) as session:
+    # The new API takes the full URL as a parameter.
+    encoded_url = urllib.parse.quote(url)
+    final_url = API_URL_TEMPLATE.format(encoded_url)
+
+    # We will make a HEAD request first to get file metadata without downloading the whole file.
+    async with aiohttp.ClientSession() as session:
         try:
-            params = {"shorturl": shorturl, "pwd": pwd}
-            async with session.get(f"{API_BASE_URL}/get-info", params=params, timeout=30) as response:
+            # Use a HEAD request to get headers
+            async with session.head(final_url, timeout=60, allow_redirects=True) as response:
                 if not response.ok:
-                    logger.error(f"Terabox API (get-info) failed with status: {response.status}")
-                    return None
-                
-                # Attempt to parse JSON, handle cases where API returns non-JSON error page
-                try:
-                    res_json = await response.json()
-                except (aiohttp.ContentTypeError, json.JSONDecodeError):
-                    res_text = await response.text()
-                    logger.warning(f"Terabox API (get-info) returned non-JSON response. Status: {response.status}, Body: {res_text[:200]}")
+                    logger.error(f"Terabox API HEAD request failed with status: {response.status} for URL: {final_url}")
                     return None
 
+                # --- Extract file info from headers ---
+                content_disposition = response.headers.get("Content-Disposition")
+                filename = "Unknown File"
+                if content_disposition:
+                    # Extract filename from 'Content-Disposition' header
+                    filename_parts = [part for part in content_disposition.split(';') if 'filename=' in part]
+                    if filename_parts:
+                        # e.g., filename="example.mp4"
+                        filename = filename_parts[0].split('=')[1].strip('"')
+
+                content_length = response.headers.get("Content-Length")
+                size_mb = 0
+                if content_length and content_length.isdigit():
+                    size_mb = round(int(content_length) / (1024 * 1024), 2)
+
+                # Since this API seems to handle one file at a time, we return a list with one item.
+                download_info = {
+                    "filename": filename,
+                    "link": final_url,  # The API URL itself is the download link
+                    "size_mb": size_mb
+                }
+
+                return [download_info]
+
+        except aiohttp.ClientConnectorError as e:
+            logger.error(f"Connection error for Terabox API: {e}")
+            return None
         except asyncio.TimeoutError:
-            logger.error(f"Timeout error getting Terabox info for {url}.")
+            logger.error(f"Timeout error while getting Terabox info for {url}.")
             return None
         except aiohttp.ClientError as e:
-            logger.error(f"Client error getting Terabox info for {url}: {e}", exc_info=False)
+            logger.error(f"Client error while getting Terabox info for {url}: {e}", exc_info=False)
             return None
-
-        if not res_json.get("ok") or not res_json.get("list"):
-            logger.warning(f"Terabox API response indicates failure or does not contain a file list. Response: {res_json}")
-            return None
-
-        download_links = []
-        tasks = []
-        for item in res_json.get("list", []):
-            if not all(k in item for k in ["fs_id", "filename", "size"]):
-                logger.warning(f"Skipping item due to missing keys: {item}")
-                continue
-
-            # Prepare data for each file and create a task
-            tasks.append(
-                _get_download_link(session, {
-                    "shareid": res_json.get("shareid"),
-                    "uk": res_json.get("uk"),
-                    "sign": res_json.get("sign"),
-                    "timestamp": res_json.get("timestamp"),
-                    "fs_id": item["fs_id"],
-                    "filename": item["filename"],
-                    "size": item["size"],
-                })
-            )
-        
-        # Run all download link requests concurrently
-        results = await asyncio.gather(*tasks)
-        download_links = [res for res in results if res] # Filter out None results from failed requests
-
-        return download_links if download_links else None
