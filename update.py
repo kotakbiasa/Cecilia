@@ -53,7 +53,7 @@ async def func_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Periksa dan siapkan remote 'upstream'
         try:
-            upstream = repo.remote('upstream')
+            upstream = repo.remote('main')
             if upstream.url != UPSTREAM_REPO_URL:
                 logger.info(f"Memperbarui URL remote upstream ke {UPSTREAM_REPO_URL}")
                 upstream.set_url(UPSTREAM_REPO_URL)
