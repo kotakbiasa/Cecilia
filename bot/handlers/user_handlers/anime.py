@@ -50,18 +50,18 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         fallback_image_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
         image_url = primary_image_url or fallback_image_url
 
-        # Gabungkan semua bagian pesan dalam format HTML
-        final_message_parts = []
-        disable_preview = True
-
         if image_url:
-            # Tambahkan link gambar tersembunyi untuk membuat pratinjau di atas teks
-            final_message_parts.append(f"<a href='{image_url}'>&#8203;</a>")
-            disable_preview = False
-        
-        final_message_parts.append(caption)
-
-        await sent_message.edit_text(text="".join(final_message_parts), reply_markup=reply_markup, parse_mode=ParseMode.HTML, disable_web_page_preview=disable_preview)
+            # Kirim sebagai foto dengan caption untuk memastikan gambar di atas
+            try:
+                await message.reply_photo(photo=image_url, caption=caption, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+                await sent_message.delete()
+            except Exception as e:
+                logger.error(f"Gagal mengirim foto untuk anime, mencoba mengirim sebagai teks: {e}")
+                # Fallback jika pengiriman foto gagal (misal, URL tidak valid)
+                await sent_message.edit_text(text=caption, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        else:
+            # Jika tidak ada gambar, edit pesan yang ada
+            await sent_message.edit_text(text=caption, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
     except Exception as e:
         logger.error(f"Gagal dalam proses pencarian anime: {e}")
