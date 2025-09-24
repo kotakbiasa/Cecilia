@@ -43,8 +43,13 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons.append(row)
         reply_markup = InlineKeyboardMarkup(buttons)
 
-        # Prioritaskan bannerImage untuk thumbnail, fallback ke coverImage
-        image_url = anime_data.get("bannerImage") or anime_data.get("coverImage", {}).get("extraLarge")
+        # Gunakan img.anili.st sebagai sumber utama, dengan fallback ke banner/cover image
+        primary_image_url = None
+        if site_url := anime_data.get('siteUrl'):
+            primary_image_url = site_url.replace("anilist.co/anime/", "img.anili.st/media/")
+        fallback_image_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
+        image_url = primary_image_url or fallback_image_url
+
         final_caption = caption
         disable_preview = True
 
@@ -53,7 +58,6 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
             final_caption = f"<a href='{image_url}'>&#8203;</a>{caption}"
             disable_preview = False
 
-        # Edit pesan yang ada untuk menampilkan hasil dengan format Markdown
         await sent_message.edit_text(text=final_caption, reply_markup=reply_markup, parse_mode=ParseMode.HTML, disable_web_page_preview=disable_preview)
 
     except Exception as e:
