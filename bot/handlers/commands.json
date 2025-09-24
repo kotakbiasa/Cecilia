@@ -188,16 +188,6 @@
             "function": "func_sys",
             "module": ".handlers.owner_handlers.sys"
         },
-        {
-            "command": "update",
-            "function": "func_update",
-            "module": "update"
-        },
-        {
-            "command": "restart",
-            "function": "func_restart",
-            "module": "update"
-        },
 
         
         {
@@ -379,11 +369,6 @@
             "command": "speedtest",
             "function": "func_speedtest",
             "module": ".handlers.user_handlers.speedtest"
-        },
-        {
-            "command": "teraboxdl",
-            "function": "func_teraboxdl",
-            "module": ".handlers.user_handlers.teraboxdl"
         }
     ]
 }
