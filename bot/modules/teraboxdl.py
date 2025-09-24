@@ -1,167 +1,138 @@
 import asyncio
 import aiohttp
 import json
-import re
-import base64
+import time
 from bot import logger
 
-WORKERS_ENDPOINTS = [
-    "https://terabox.hnn.workers.dev",
-    "https://plain-grass-58b2.comprehensiveaquamarine.workers.dev",
-    "https://bold-hall-f23e.7rochelle.workers.dev",
-    "https://winter-thunder-0360.belitawhite.workers.dev",
-    "https://fragrant-term-0df9.elviraeducational.workers.dev",
-    "https://purple-glitter-924b.miguelalocal.workers.dev",
-]
-
-DEFAULT_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.112 Safari/537.36",
-    "Accept": "*/*",
+API_BASE = "https://www.terabox.com"
+HEADERS = {
+    "Accept": "application/json, text/plain, */*",
     "Accept-Language": "en-US,en;q=0.9",
     "Connection": "keep-alive",
-    "Sec-Fetch-Site": "same-origin",
-    "Sec-Fetch-Mode": "cors",
-    "Sec-Fetch-Dest": "empty",
+    "DNT": "1",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
+    "Referer": f"{API_BASE}/",
 }
-
-def _extract_shorturl(url: str) -> str | None:
-    """Extracts shorturl from a full TeraBox URL."""
-    patterns = [r'terabox\.com/s/([^/?&]+)', r'1024tera\.com/s/([^/?&]+)', r'4funbox\.com/s/([^/?&]+)', r'mirrobox\.com/s/([^/?&]+)', r'teraboxapp\.com/s/([^/?&]+)', r'surl=([^&]+)', r'/s/([^/?&]+)']
-    for pattern in patterns:
-        if match := re.search(pattern, url):
-            return match.group(1)
-    if re.match(r'^[a-zA-Z0-9_-]{10,25}$', url):
-        return url
-    return None
-
-async def _get_info(session: aiohttp.ClientSession, shorturl: str) -> tuple[dict | None, str | None]:
-    """Fetches file/folder info from TeraBox via workers, with fallbacks."""
-    params = {"shorturl": shorturl, "pwd": ""}
-    api_paths = ["/api/get-info-new", "/api/get-info"]
-
-    for base_url in WORKERS_ENDPOINTS:
-        headers = DEFAULT_HEADERS.copy()
-        headers.update({"Referer": f"{base_url}/", "Origin": base_url})
-        for api_path in api_paths:
-            try:
-                api_url = f"{base_url}{api_path}"
-                async with session.get(api_url, params=params, headers=headers, timeout=20) as response:
-                    if not response.ok:
-                        continue
-                    data = await response.json()
-                    if data.get("ok"):
-                        logger.info(f"Successfully got info from {api_url}")
-                        return data, base_url
-            except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError) as e:
-                logger.warning(f"Exception on endpoint {base_url}{api_path}: {e}")
-                continue
-    return None, None
-
-async def _get_download_link(session: aiohttp.ClientSession, params: dict, shorturl: str) -> dict | None:
-    """Gets the direct download link, with fallback and token refresh logic."""
-    api_path = "/api/get-downloadp"
-
-    for base_url in WORKERS_ENDPOINTS:
-        headers = DEFAULT_HEADERS.copy()
-        headers.update({
-            "Referer": f"{base_url}/",
-            "Origin": base_url,
-            "Content-Type": "application/json"
-        })
-        try:
-            api_url = f"{base_url}{api_path}"
-            async with session.post(api_url, json=params, headers=headers, timeout=20) as response:
-                if not response.ok:
-                    continue
-                data = await response.json()
-
-                if data.get("ok"):
-                    logger.info(f"Successfully got download link from {api_url}")
-                    return data
-
-                # Handle token expiration
-                error_msg = data.get('message', '').lower()
-                if 'expired' in error_msg or 'invalid' in error_msg:
-                    logger.warning(f"Token expired/invalid at {base_url}. Attempting to refresh...")
-                    fresh_info, _ = await _get_info(session, shorturl)
-                    if fresh_info and fresh_info.get('ok'):
-                        params.update({
-                            'shareid': int(fresh_info['shareid']),
-                            'uk': int(fresh_info['uk']),
-                            'sign': str(fresh_info['sign']),
-                            'timestamp': int(fresh_info['timestamp'])
-                        })
-                        logger.info("Token refreshed. Retrying download link request...")
-                        async with session.post(api_url, json=params, headers=headers, timeout=20) as retry_response:
-                            if retry_response.ok:
-                                retry_data = await retry_response.json()
-                                if retry_data.get("ok"):
-                                    logger.info("Successfully got link with refreshed token!")
-                                    return retry_data
-        except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError) as e:
-            logger.warning(f"Exception on download endpoint {base_url}{api_path}: {e}")
-            continue
-
-    logger.error(f"All download endpoints failed for fs_id: {params.get('fs_id')}")
-    return None
 
 async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
     """
-    Converts a Terabox share URL into a direct download link with fallback and token refresh.
+    Converts a Terabox share URL into a direct download link by simulating browser API calls.
 
     :param url: The Terabox share URL (e.g., https://terabox.com/s/...).
-    :param pwd: The password for the link, if any. (Currently unused by API).
+    :param pwd: The password for the link, if any.
     :return: A list of dictionaries containing file info, or None on failure.
     """
-    shorturl = _extract_shorturl(url)
-    if not shorturl:
-        logger.warning(f"Could not extract a valid shorturl from: {url}")
-        return None
+    try:
+        async with aiohttp.ClientSession(headers=HEADERS) as session:
+            # 1. Get the initial page to extract shorturl and cookies
+            async with session.get(url) as resp:
+                if not resp.ok:
+                    logger.error(f"Initial request to {url} failed with status {resp.status}")
+                    return None
+                
+                # Extract shorturl from the final redirected URL
+                final_url = str(resp.url)
+                try:
+                    shorturl = final_url.split('?surl=')[-1]
+                except IndexError:
+                    logger.error(f"Could not find 'surl' in the final URL: {final_url}")
+                    return None
 
-    async with aiohttp.ClientSession(headers=DEFAULT_HEADERS) as session:
-        info_data, successful_base_url = await _get_info(session, shorturl)
-
-        if not info_data or not info_data.get("list"):
-            logger.error(f"Failed to get file info for shorturl: {shorturl}")
-            return None
-
-        tasks = []
-        for item in info_data.get("list", []):
-            if not all(k in item for k in ["fs_id", "filename", "size"]):
-                logger.warning(f"Skipping item due to missing keys: {item}")
-                continue
-
+            # 2. Get file list information
             params = {
-                "shareid": int(info_data['shareid']),
-                "uk": int(info_data['uk']),
-                "sign": str(info_data['sign']),
-                "timestamp": int(info_data['timestamp']),
-                "fs_id": int(item['fs_id']),
+                "app_id": "250528",
+                "shorturl": shorturl,
+                "root": "1",
             }
-            # Create a task to get the download link for each file
-            tasks.append(
-                _process_file_item(session, params, item, shorturl)
-            )
+            list_url = f"{API_BASE}/api/share/list"
+            async with session.get(list_url, params=params) as resp:
+                if not resp.ok:
+                    logger.error(f"API request to {list_url} failed with status {resp.status}")
+                    return None
+                
+                data = await resp.json()
+                if data.get("errno") != 0:
+                    logger.error(f"API error from share/list: {data.get('errmsg', 'Unknown error')}")
+                    return None
+                
+                file_list = data.get("list")
+                if not file_list:
+                    logger.warning("API response from share/list contains no files.")
+                    return None
 
-        # Run all download link requests concurrently
-        results = await asyncio.gather(*tasks)
-        download_links = [res for res in results if res]  # Filter out None results
+            # 3. Get download parameters (sign, timestamp, etc.)
+            share_info = data
+            params = {
+                "app_id": "250528",
+                "shorturl": shorturl,
+                "web": "1",
+                "auth": "1",
+                "encrypt": "1"
+            }
+            verify_url = f"{API_BASE}/share/verify"
+            async with session.get(verify_url, params=params) as resp:
+                if not resp.ok:
+                    logger.error(f"API request to {verify_url} failed with status {resp.status}")
+                    return None
+                
+                verify_data = await resp.json()
+                if verify_data.get("errno") != 0:
+                    logger.error(f"API error from share/verify: {verify_data.get('errmsg', 'Unknown error')}")
+                    return None
+                
+                randsk = verify_data.get("randsk")
 
-        return download_links if download_links else None
+            # 4. Get the actual download link for each file
+            download_links = []
+            for item in file_list:
+                if item.get("isdir") == "1":
+                    continue # Skip directories for now
 
-async def _process_file_item(session: aiohttp.ClientSession, params: dict, item_data: dict, shorturl: str) -> dict | None:
-    """Helper to process a single file item and get its download link."""
-    link_data = await _get_download_link(session, params, shorturl)
-    if not link_data or not link_data.get("ok"):
+                fs_id = item.get("fs_id")
+                params = {
+                    "app_id": "250528",
+                    "web": "1",
+                    "auth": "1",
+                    "encrypt": "1",
+                    "shareid": share_info.get("shareid"),
+                    "uk": share_info.get("uk"),
+                    "sign": share_info.get("sign"),
+                    "timestamp": share_info.get("timestamp"),
+                    "primaryid": item.get("fs_id"),
+                    "fid_list": f"[{fs_id}]",
+                    "extra": '{"sekey":"' + randsk + '"}',
+                }
+                
+                download_api_url = f"{API_BASE}/api/share/download"
+                async with session.get(download_api_url, params=params) as resp:
+                    if not resp.ok:
+                        logger.warning(f"Download link request for fs_id {fs_id} failed with status {resp.status}")
+                        continue
+                    
+                    download_data = await resp.json()
+                    if download_data.get("errno") != 0:
+                        logger.warning(f"API error from share/download for fs_id {fs_id}: {download_data.get('errmsg')}")
+                        continue
+                    
+                    dlink_info = download_data.get("dlink")
+                    if not dlink_info:
+                        logger.warning(f"No 'dlink' in response for fs_id {fs_id}")
+                        continue
+
+                    # The actual download URL is in the 'dlink' field.
+                    # The API might return a direct link or a link that needs another redirect.
+                    # We will use the direct link and let the downloader handle any redirects.
+                    download_url = dlink_info
+
+                    size_in_mb = int(item.get('size', 0)) / (1024 * 1024)
+                    download_links.append({
+                        "filename": item.get("server_filename"),
+                        "link": download_url,
+                        "size_mb": round(size_in_mb, 2)
+                    })
+
+            return download_links if download_links else None
+
+    except Exception as e:
+        logger.error(f"An unexpected error occurred in terabox_download: {e}", exc_info=True)
         return None
-
-    download_link = link_data.get("downloadLink")
-    if not download_link:
-        return None
-
-    size_in_mb = int(item_data.get('size', 0)) / (1024 * 1024)
-    return {
-        "filename": item_data.get("filename"),
-        "link": download_link,
-        "size_mb": round(size_in_mb, 2)
-    }
