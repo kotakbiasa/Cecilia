@@ -369,6 +369,6 @@
             "command": "speedtest",
             "function": "func_speedtest",
             "module": ".handlers.user_handlers.speedtest"
-        },
+        }
     ]
 }
