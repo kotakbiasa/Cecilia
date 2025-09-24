@@ -43,23 +43,18 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons.append(row)
         reply_markup = InlineKeyboardMarkup(buttons)
 
-        image = anime_data.get("bannerImage") or anime_data.get("coverImage", {}).get("extraLarge")
+        # Prioritaskan bannerImage untuk thumbnail, fallback ke coverImage
+        image_url = anime_data.get("bannerImage") or anime_data.get("coverImage", {}).get("extraLarge")
+        final_caption = caption
+        disable_preview = True
 
-        if image:
-            try:
-                await message.reply_photo(
-                    photo=image,
-                    caption=caption,
-                    parse_mode=ParseMode.MARKDOWN,
-                    reply_markup=reply_markup,
-                )
-                await sent_message.delete()
-            except Exception:
-                # Fallback jika reply_photo gagal (misal, karena gambar terlalu besar atau format tidak didukung)
-                caption += f" [⁠]({image})" # Tambahkan link gambar tersembunyi
-                await sent_message.edit_text(caption, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
-        else:
-            await sent_message.edit_text(caption, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+        if image_url:
+            # Tambahkan link gambar tersembunyi untuk membuat pratinjau di atas teks
+            final_caption = f"<a href='{image_url}'>&#8203;</a>{caption}"
+            disable_preview = False
+
+        # Edit pesan yang ada untuk menampilkan hasil dengan format Markdown
+        await sent_message.edit_text(text=final_caption, reply_markup=reply_markup, parse_mode=ParseMode.HTML, disable_web_page_preview=disable_preview)
 
     except Exception as e:
         logger.error(f"Gagal dalam proses pencarian anime: {e}")
