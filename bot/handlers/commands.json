@@ -189,8 +189,13 @@
             "module": ".handlers.owner_handlers.sys"
         },
         {
-            "command": "update, restart",
+            "command": "update",
             "function": "func_update",
+            "module": ".handlers.owner_handlers.update"
+        },
+        {
+            "command": "restart",
+            "function": "func_restart",
             "module": ".handlers.owner_handlers.update"
         },
 
