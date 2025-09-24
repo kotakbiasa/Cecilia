@@ -59,71 +59,45 @@ def _format_airing_time(total_seconds: int) -> str:
         
     return ", ".join(parts) if parts else "sekarang"
 
-async def build_anime_info_message(anime_data: dict, target_user: str | None = None, is_inline: bool = False) -> str:
-    """Membangun teks caption untuk anime."""
+def build_anime_info_message_md(anime_data: dict) -> str:
+    """Membangun teks caption untuk anime dalam format Markdown, berdasarkan contoh."""
     title = anime_data['title']['romaji']
-    if anime_data['title']['english']:
-        title = f"{title} ({anime_data['title']['english']})"
-    
-    caption_parts = []
-    if target_user:
-        caption_parts.append(f"Untuk {escape(target_user)},\n\n")
+    native_title = anime_data['title'].get('native', '')
+    msg = f"*{title}*(`{native_title}`)\n"
 
     description_en = clean_html(anime_data.get('description', ''))
-    description = ""
-    if description_en:
-        translated_desc = await asyncio.to_thread(translate, description_en, 'id')
-        description = translated_desc or description_en
-    else:
-        description = "Tidak ada deskripsi."
 
     status = anime_data.get('status', 'N/A').replace('_', ' ').title()
-    
-    start_date = anime_data.get('startDate')
-    date_str = "N/A"
-    if start_date and all(start_date.get(k) for k in ['year', 'month', 'day']):
-        try:
-            date_str = f"{month_name[start_date['month']]} {start_date['day']}, {start_date['year']}"
-        except (IndexError, TypeError):
-            date_str = f"{start_date.get('day', '')}-{start_date.get('month', '')}-{start_date.get('year', '')}"
+    duration = f"{anime_data.get('duration', 'N/A')} Per Ep." if anime_data.get('duration') else 'N/A'
+    score = anime_data.get('averageScore', 'N/A')
+    if score != 'N/A':
+        score = score / 10
 
-    studio = "N/A"
-    if anime_data.get('studios') and anime_data['studios'].get('nodes'):
-        studio = anime_data['studios']['nodes'][0]['name']
-    
-    duration = f"{anime_data.get('duration', 'N/A')} menit" if anime_data.get('duration') else 'N/A'
+    msg += f"*Type*: {anime_data.get('format', 'N/A')}\n"
+    msg += f"*Status*: {status}\n"
+    msg += f"*Episodes*: {anime_data.get('episodes', 'N/A')}\n"
+    msg += f"*Duration*: {duration}\n"
+    msg += f"*Score*: {score}\n"
 
-    title_link = f"<b><a href=\"{anime_data['siteUrl']}\">{title}</a></b>" if is_inline else f"<b>{title}</b>"
+    genres = anime_data.get('genres', [])
+    if genres:
+        msg += f"*Genres*: `{', '.join(genres)}`\n"
 
-    caption_parts.extend([
-        f"{title_link}\n\n",
-        f"<b>Format:</b> {anime_data.get('format', 'N/A')}\n",
-        f"<b>Status:</b> {status}\n",
-    ])
+    studios = anime_data.get('studios', {}).get('nodes', [])
+    if studios:
+        studio_names = [s['name'] for s in studios]
+        msg += f"*Studios*: `{', '.join(studio_names)}`\n"
 
-    next_airing = anime_data.get('nextAiringEpisode')
-    if status.lower() == 'releasing' and next_airing and next_airing.get('timeUntilAiring') and next_airing.get('episode'):
-        time_until = _format_airing_time(next_airing['timeUntilAiring'])
-        caption_parts.append(f"<b>Episode Berikutnya:</b> <code>{next_airing['episode']}</code> tayang dalam <code>{time_until}</code>\n")
-
-    caption_parts.extend([
-        f"<b>Episode:</b> {anime_data.get('episodes', 'N/A')}\n",
-        f"<b>Durasi:</b> {duration} per episode\n",
-        f"<b>Tanggal Rilis:</b> {date_str}\n",
-        f"<b>Studio:</b> {studio}\n",
-        f"<b>Skor:</b> {anime_data.get('averageScore') / 10 if anime_data.get('averageScore') else 'N/A'}/10\n",
-        f"<b>Genre:</b> {', '.join(anime_data.get('genres', []))}\n\n",
-    ])
-
-    if description and description != "Tidak ada deskripsi.":
-        if len(description) > 400:
-            description = description[:400].strip() + "..."
-            read_more_link = f" <a href='{anime_data['siteUrl']}'>Baca Selengkapnya</a>"
-            caption_parts.append(f"<blockquote expandable>{escape(description)}{read_more_link}</blockquote>")
+    description = description_en
+    info_url = anime_data.get("siteUrl")
+    if description:
+        if len(description) > 500:
+            description = f'{description[:400]}....'
+            msg += f"\n*Description*: _{description}_Read More"
         else:
-            caption_parts.append(f"<blockquote expandable>{escape(description)}</blockquote>")
+            msg += f"\n*Description*:_{description}_"
 
-    return "".join(caption_parts)
+    return msg
 
 def build_manga_info_message(manga_data: dict, target_user: str | None = None, is_inline: bool = False) -> str:
     """Membangun teks caption untuk manga."""
