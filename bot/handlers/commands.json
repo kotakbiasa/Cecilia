@@ -379,6 +379,11 @@
             "command": "speedtest",
             "function": "func_speedtest",
             "module": ".handlers.user_handlers.speedtest"
+        },
+        {
+            "command": "teraboxdl",
+            "function": "func_teraboxdl",
+            "module": ".handlers.user_handlers.teraboxdl"
         }
     ]
 }
