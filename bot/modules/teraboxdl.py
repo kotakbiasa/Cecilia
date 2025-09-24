@@ -14,7 +14,7 @@ DEFAULT_HEADERS = {
     "Sec-Fetch-Dest": "empty",
     "Sec-Fetch-Mode": "cors",
     "Sec-Fetch-Site": "same-origin",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
 }
 
 async def _get_download_link(session: aiohttp.ClientSession, data: dict) -> dict | None:
@@ -88,8 +88,8 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
             logger.error(f"Client error getting Terabox info for {url}: {e}", exc_info=False)
             return None
 
-        if not res_json.get("list"):
-            logger.warning("Terabox API response does not contain a file list.")
+        if not res_json.get("ok") or not res_json.get("list"):
+            logger.warning(f"Terabox API response indicates failure or does not contain a file list. Response: {res_json}")
             return None
 
         download_links = []
