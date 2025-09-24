@@ -59,43 +59,42 @@ def _format_airing_time(total_seconds: int) -> str:
         
     return ", ".join(parts) if parts else "sekarang"
 
-def build_anime_info_message_md(anime_data: dict) -> str:
-    """Membangun teks caption untuk anime dalam format Markdown, berdasarkan contoh."""
+def build_anime_info_message_md(anime_data: dict, is_inline: bool = False) -> str:
+    """Membangun teks caption untuk anime dalam format HTML."""
     title = anime_data['title']['romaji']
     native_title = anime_data['title'].get('native', '')
-    msg = f"*{title}*(`{native_title}`)\n"
+    title_link = f"<b><a href=\"{anime_data['siteUrl']}\">{escape(title)}</a></b>" if is_inline else f"<b>{escape(title)}</b>"
+    msg = f"{title_link} (<code>{escape(native_title)}</code>)\n\n"
 
     description_en = clean_html(anime_data.get('description', ''))
 
     status = anime_data.get('status', 'N/A').replace('_', ' ').title()
     duration = f"{anime_data.get('duration', 'N/A')} Per Ep." if anime_data.get('duration') else 'N/A'
     score = anime_data.get('averageScore', 'N/A')
-    if score != 'N/A':
+    if score and score != 'N/A':
         score = score / 10
 
-    msg += f"*Type*: {anime_data.get('format', 'N/A')}\n"
-    msg += f"*Status*: {status}\n"
-    msg += f"*Episodes*: {anime_data.get('episodes', 'N/A')}\n"
-    msg += f"*Duration*: {duration}\n"
-    msg += f"*Score*: {score}\n"
+    msg += f"<b>Type</b>: {anime_data.get('format', 'N/A')}\n"
+    msg += f"<b>Status</b>: {status}\n"
+    msg += f"<b>Episodes</b>: {anime_data.get('episodes', 'N/A')}\n"
+    msg += f"<b>Duration</b>: {duration}\n"
+    msg += f"<b>Score</b>: {score}\n"
 
     genres = anime_data.get('genres', [])
     if genres:
-        msg += f"*Genres*: `{', '.join(genres)}`\n"
+        msg += f"<b>Genres</b>: <code>{escape(', '.join(genres))}</code>\n"
 
     studios = anime_data.get('studios', {}).get('nodes', [])
     if studios:
         studio_names = [s['name'] for s in studios]
-        msg += f"*Studios*: `{', '.join(studio_names)}`\n"
+        msg += f"<b>Studios</b>: <code>{escape(', '.join(studio_names))}</code>\n"
 
-    description = description_en
-    info_url = anime_data.get("siteUrl")
-    if description:
-        if len(description) > 500:
-            description = f'{description[:400]}....'
-            msg += f"\n*Description*: _{description}_Read More"
+    if description_en:
+        if len(description_en) > 400:
+            description = escape(description_en[:400].strip()) + "..."
+            msg += f"\n<b>Description</b>: <blockquote>{description} <a href='{anime_data['siteUrl']}'>Read More</a></blockquote>"
         else:
-            msg += f"\n*Description*:_{description}_"
+            msg += f"\n<b>Description</b>: <blockquote>{escape(description_en)}</blockquote>"
 
     return msg
 

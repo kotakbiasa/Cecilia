@@ -34,38 +34,55 @@ async def func_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.effective_message
     user_id = update.effective_user.id
 
-    if user_id != config.owner_id:
+    # Izinkan owner dan sudo users
+    sudo_users = getattr(config, 'sudo_users', [])
+    if user_id != config.owner_id and user_id not in sudo_users:
         await message.reply_text("Perintah ini hanya untuk pemilik bot.")
         return
 
     sent_message = await message.reply_text("Mencoba memperbarui bot...")
+    UPSTREAM_REPO_URL = "https://github.com/kotakbiasa/Cecilia"
 
     try:
-        repo = git.Repo(search_parent_directories=True)
+        repo = git.Repo('.', search_parent_directories=True)
         
         # Periksa apakah ada perubahan lokal yang belum di-commit
         if repo.is_dirty(untracked_files=True):
             await sent_message.edit_text("Ada perubahan lokal yang belum di-commit. Harap commit atau stash perubahan tersebut terlebih dahulu.")
             return
 
-        origin = repo.remotes.origin
-        logger.info("Menarik pembaruan dari Git...")
-        pull_info = origin.pull()
+        # Periksa dan siapkan remote 'upstream'
+        try:
+            upstream = repo.remote('upstream')
+            if upstream.url != UPSTREAM_REPO_URL:
+                logger.info(f"Memperbarui URL remote upstream ke {UPSTREAM_REPO_URL}")
+                upstream.set_url(UPSTREAM_REPO_URL)
+        except git.exc.GitCommandError:
+            logger.info(f"Membuat remote upstream baru untuk {UPSTREAM_REPO_URL}")
+            upstream = repo.create_remote('upstream', UPSTREAM_REPO_URL)
 
-        # Cek apakah ada pembaruan
-        if pull_info and pull_info[0].flags & git.remote.FetchInfo.HEAD_UPTODATE:
-            await sent_message.edit_text("Bot sudah dalam versi terbaru. Tidak ada yang perlu diperbarui.")
+        # Fetch pembaruan dari upstream
+        await sent_message.edit_text("Mengambil pembaruan dari repositori upstream...")
+        upstream.fetch()
+
+        old_commit = repo.head.commit
+        if old_commit == repo.remotes.upstream.refs.master.commit:
+            await sent_message.edit_text("Bot sudah dalam versi terbaru dari repositori upstream. Tidak ada yang perlu diperbarui.")
             return
 
-        # Cek apakah requirements.txt berubah
-        diff_index = repo.index.diff("HEAD~1")
-        requirements_changed = any(diff.a_path == 'requirements.txt' for diff in diff_index)
+        # Cek apakah requirements.txt berubah dengan membandingkan commit
+        diff_output = repo.git.diff(f'{old_commit.hexsha}..upstream/master', '--', 'requirements.txt')
+        requirements_changed = bool(diff_output)
+
+        # Lakukan pull dari upstream master
+        logger.info("Menarik pembaruan dari upstream/master...")
+        upstream.pull('master')
 
         if requirements_changed:
             logger.info("requirements.txt berubah, menginstal dependensi baru...")
             await sent_message.edit_text("Menginstal dependensi baru...")
             stdout, stderr = await run_command(f"{sys.executable} -m pip install -r requirements.txt")
-            if stderr:
+            if stderr and "Requirement already satisfied" not in stderr:
                 await sent_message.edit_text(f"Gagal menginstal dependensi:\n<code>{stderr}</code>")
                 return
 
@@ -79,7 +96,9 @@ async def func_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def func_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Memulai ulang bot (hanya untuk pemilik)."""
-    if update.effective_user.id == config.owner_id:
+    user_id = update.effective_user.id
+    sudo_users = getattr(config, 'sudo_users', [])
+    if user_id == config.owner_id or user_id in sudo_users:
         await update.effective_message.reply_text("Memulai ulang bot...")
         restart()
     else:
