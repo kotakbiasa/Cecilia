@@ -44,7 +44,7 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
                 "shorturl": shorturl,
                 "root": "1",
             }
-            list_url = f"{API_BASE}/api/share/list"
+            list_url = f"{API_BASE}/api/share/getlist"
             async with session.get(list_url, params=params) as resp:
                 if not resp.ok:
                     logger.error(f"API request to {list_url} failed with status {resp.status}")
