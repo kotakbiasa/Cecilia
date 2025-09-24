@@ -1,9 +1,14 @@
+import asyncio
 import aiohttp
 import json
 import re
 from bot import logger
 
 API_BASE_URL = "https://terabox.hnn.workers.dev/api"
+DEFAULT_HEADERS = {
+    "Referer": "https://terabox.hnn.workers.dev/",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+}
 
 async def _get_download_link(session: aiohttp.ClientSession, data: dict) -> dict | None:
     """
@@ -15,7 +20,7 @@ async def _get_download_link(session: aiohttp.ClientSession, data: dict) -> dict
         "Referer": "https://terabox.hnn.workers.dev/",
     }
     try:
-        async with session.post(f"{API_BASE_URL}/get-download", json=data, headers=headers) as response:
+        async with session.post(f"{API_BASE_URL}/get-download", json=data, headers=headers, timeout=30) as response:
             if not response.ok:
                 logger.error(f"Terabox API (get-download) failed with status: {response.status}")
                 return None
@@ -31,8 +36,11 @@ async def _get_download_link(session: aiohttp.ClientSession, data: dict) -> dict
             else:
                 logger.warning(f"Terabox API (get-download) returned not ok: {res_json}")
                 return None
-    except Exception as e:
-        logger.error(f"Error fetching Terabox download link: {e}", exc_info=True)
+    except asyncio.TimeoutError:
+        logger.error("Timeout error while fetching Terabox download link.")
+        return None
+    except (aiohttp.ClientError, json.JSONDecodeError) as e:
+        logger.error(f"Error fetching Terabox download link: {e}", exc_info=False)
         return None
 
 async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
@@ -49,29 +57,27 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
         return None
     shorturl = match.group(1)
 
-    headers = {
-        "Referer": "https://terabox.hnn.workers.dev/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    }
-
-    async with aiohttp.ClientSession(headers=headers) as session:
+    async with aiohttp.ClientSession(headers=DEFAULT_HEADERS) as session:
         try:
             params = {"shorturl": shorturl, "pwd": pwd}
-            async with session.get(f"{API_BASE_URL}/get-info", params=params) as response:
+            async with session.get(f"{API_BASE_URL}/get-info", params=params, timeout=30) as response:
                 if not response.ok:
                     logger.error(f"Terabox API (get-info) failed with status: {response.status}")
                     return None
                 
-                res_text = await response.text()
-                # The API sometimes returns non-JSON text on error
-                if '"ok":true' not in res_text or '"list":[{"' not in res_text:
-                    logger.warning(f"Could not find file information from Terabox API. Response: {res_text[:200]}")
+                # Attempt to parse JSON, handle cases where API returns non-JSON error page
+                try:
+                    res_json = await response.json()
+                except (aiohttp.ContentTypeError, json.JSONDecodeError):
+                    res_text = await response.text()
+                    logger.warning(f"Terabox API (get-info) returned non-JSON response. Status: {response.status}, Body: {res_text[:200]}")
                     return None
-                
-                res_json = json.loads(res_text)
 
-        except Exception as e:
-            logger.error(f"Error getting Terabox info for {url}: {e}", exc_info=True)
+        except asyncio.TimeoutError:
+            logger.error(f"Timeout error getting Terabox info for {url}.")
+            return None
+        except aiohttp.ClientError as e:
+            logger.error(f"Client error getting Terabox info for {url}: {e}", exc_info=False)
             return None
 
         if not res_json.get("list"):
@@ -79,23 +85,27 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
             return None
 
         download_links = []
+        tasks = []
         for item in res_json.get("list", []):
             if not all(k in item for k in ["fs_id", "filename", "size"]):
                 logger.warning(f"Skipping item due to missing keys: {item}")
                 continue
 
-            data_for_download = {
-                "shareid": res_json.get("shareid"),
-                "uk": res_json.get("uk"),
-                "sign": res_json.get("sign"),
-                "timestamp": res_json.get("timestamp"),
-                "fs_id": item["fs_id"],
-                "filename": item["filename"],
-                "size": item["size"],
-            }
-            
-            link_info = await _get_download_link(session, data_for_download)
-            if link_info:
-                download_links.append(link_info)
+            # Prepare data for each file and create a task
+            tasks.append(
+                _get_download_link(session, {
+                    "shareid": res_json.get("shareid"),
+                    "uk": res_json.get("uk"),
+                    "sign": res_json.get("sign"),
+                    "timestamp": res_json.get("timestamp"),
+                    "fs_id": item["fs_id"],
+                    "filename": item["filename"],
+                    "size": item["size"],
+                })
+            )
+        
+        # Run all download link requests concurrently
+        results = await asyncio.gather(*tasks)
+        download_links = [res for res in results if res] # Filter out None results from failed requests
 
         return download_links if download_links else None
