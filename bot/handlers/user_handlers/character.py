@@ -33,7 +33,9 @@ async def func_character(update: Update, context: ContextTypes.DEFAULT_TYPE):
         final_caption = caption
         disable_preview = True
 
+        image_url = char_data.get('image', {}).get('large')
         if image_url:
+            # Tambahkan pratinjau gambar di atas teks
             final_caption = f"<a href='{image_url}'>&#8203;</a>{caption}"
             disable_preview = False
 

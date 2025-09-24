@@ -113,8 +113,16 @@ async def build_anime_info_message(anime_data: dict, target_user: str | None = N
         f"<b>Studio:</b> {studio}\n",
         f"<b>Skor:</b> {anime_data.get('averageScore') / 10 if anime_data.get('averageScore') else 'N/A'}/10\n",
         f"<b>Genre:</b> {', '.join(anime_data.get('genres', []))}\n\n",
-        f"<blockquote expandable>{description}</blockquote>"
     ])
+
+    if description and description != "Tidak ada deskripsi.":
+        if len(description) > 400:
+            description = description[:400].strip() + "..."
+            read_more_link = f" <a href='{anime_data['siteUrl']}'>Baca Selengkapnya</a>"
+            caption_parts.append(f"<blockquote expandable>{escape(description)}{read_more_link}</blockquote>")
+        else:
+            caption_parts.append(f"<blockquote expandable>{escape(description)}</blockquote>")
+
     return "".join(caption_parts)
 
 def build_manga_info_message(manga_data: dict, target_user: str | None = None, is_inline: bool = False) -> str:
@@ -154,16 +162,22 @@ def build_character_info_message(char_data: dict, target_user: str | None = None
     if target_user:
         caption_parts.append(f"Untuk {escape(target_user)},\n\n")
 
-    description = clean_html(char_data.get('description', 'Tidak ada deskripsi.'))
+    description_html = char_data.get('description', '')
+    description = clean_html(description_html)
 
     title_link = f"<b><a href=\"{char_data['siteUrl']}\">{title}</a></b>" if is_inline else f"<b>{title}</b>"
     caption_parts.append(title_link)
 
-    if description and description != 'Tidak ada deskripsi.':
-        caption_parts.append(f"\n\n<blockquote expandable>{description}</blockquote>")
+    if description:
+        if len(description) > 400:
+            description = description[:400].strip() + "..."
+            read_more_link = f" <a href='{char_data['siteUrl']}'>Baca Selengkapnya</a>"
+            caption_parts.append(f"\n\n<blockquote expandable>{escape(description)}{read_more_link}</blockquote>")
+        else:
+            caption_parts.append(f"\n\n<blockquote expandable>{escape(description)}</blockquote>")
 
     media_nodes = char_data.get('media', {}).get('nodes', [])
-    if media_nodes:
+    if media_nodes and not is_inline: # Don't show media in inline results to keep it clean
         media_list = [
             f"• <code>{escape(media.get('title', {}).get('userPreferred') or media.get('title', {}).get('romaji'))}</code>"
             for media in media_nodes[:5] if media.get('title')

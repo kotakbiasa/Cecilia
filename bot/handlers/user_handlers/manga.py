@@ -28,14 +28,17 @@ async def func_manga(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons = [[InlineKeyboardButton("Lihat di Anilist", url=manga_data['siteUrl'])]]
         reply_markup = InlineKeyboardMarkup(buttons)
 
+        # Coba dapatkan URL gambar dari beberapa sumber, utamakan banner
         image_url = manga_data.get('bannerImage') or manga_data.get('coverImage', {}).get('extraLarge')
         final_caption = caption
         disable_preview = True
 
         if image_url:
+            # Tambahkan zero-width space dengan link gambar untuk membuat pratinjau di atas teks
             final_caption = f"<a href='{image_url}'>&#8203;</a>{caption}"
             disable_preview = False
 
+        # Edit pesan yang sudah ada untuk menampilkan hasil
         await sent_message.edit_text(
             text=final_caption,
             reply_markup=reply_markup,
