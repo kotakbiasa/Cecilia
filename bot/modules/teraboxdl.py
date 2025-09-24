@@ -6,8 +6,15 @@ from bot import logger
 
 API_BASE_URL = "https://terabox.hnn.workers.dev/api"
 DEFAULT_HEADERS = {
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Connection": "keep-alive",
+    "Host": "terabox.hnn.workers.dev",
     "Referer": "https://terabox.hnn.workers.dev/",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
 }
 
 async def _get_download_link(session: aiohttp.ClientSession, data: dict) -> dict | None:
@@ -18,6 +25,7 @@ async def _get_download_link(session: aiohttp.ClientSession, data: dict) -> dict
         "Content-Type": "application/json",
         "Origin": "https://terabox.hnn.workers.dev",
         "Referer": "https://terabox.hnn.workers.dev/",
+        "User-Agent": DEFAULT_HEADERS["User-Agent"], # Add User-Agent here as well
     }
     try:
         async with session.post(f"{API_BASE_URL}/get-download", json=data, headers=headers, timeout=30) as response:
