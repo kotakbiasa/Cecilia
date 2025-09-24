@@ -57,7 +57,7 @@ async def func_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if upstream.url != UPSTREAM_REPO_URL:
                 logger.info(f"Memperbarui URL remote upstream ke {UPSTREAM_REPO_URL}")
                 upstream.set_url(UPSTREAM_REPO_URL)
-        except git.exc.GitCommandError:
+        except ValueError:
             logger.info(f"Membuat remote upstream baru untuk {UPSTREAM_REPO_URL}")
             upstream = repo.create_remote('upstream', UPSTREAM_REPO_URL)
 
