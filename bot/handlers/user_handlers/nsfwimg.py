@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.constants import ChatType
 from telegram.ext import ContextTypes
 
-from bot import logger
+from bot import logger, config
 from bot.modules.nsfwimg_api import (
     NEKOBOT_NSFW, WAIFUIM_NSFW, WAIFUPICS_NSFW, NEKOSAPI_NSFW,
     fetch_nekobot_nsfw, fetch_waifu_im_nsfw, fetch_waifu_pics_nsfw, fetch_nekosapi_nsfw
@@ -25,8 +25,14 @@ async def func_nsfwimg(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """Handles NSFW image categories."""
     message = update.effective_message
     chat = update.effective_chat
+    user_id = update.effective_user.id
 
-    # --- Safety Check ---
+    # --- Permission & Safety Checks ---
+    sudo_users = getattr(config, 'sudo_users', [])
+    if user_id != config.owner_id and user_id not in sudo_users:
+        await message.reply_text("Anda tidak memiliki izin untuk menggunakan perintah ini.")
+        return
+
     if chat.type != ChatType.PRIVATE:
         await message.reply_text("Perintah ini hanya dapat digunakan dalam obrolan pribadi untuk alasan keamanan.")
         return
