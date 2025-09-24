@@ -26,7 +26,6 @@ from telegram.constants import ChatID, ParseMode
 
 from bot.handlers.inline_handler import inline_handler
 from bot.handlers.user_handlers.ytdl import youtube_callback_handler
-from bot.handlers.user_handlers.anime import anime_callback_handler
 
 from . import COMMANDS_FILE_PATH, DEFAULT_ERROR_CHANNEL_ID, RUN_SERVER, bot, logger, config
 from .utils.alive import alive
@@ -268,9 +267,6 @@ async def main():
 
     # Registering ytdl callback handler
     application.add_handler(CallbackQueryHandler(youtube_callback_handler, pattern="^ytdl:"))
-
-    # Registering anime callback handler
-    application.add_handler(CallbackQueryHandler(anime_callback_handler, pattern="^anime:"))
 
     # Error handler
     application.add_error_handler(default_error_handler)
