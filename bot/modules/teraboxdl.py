@@ -51,7 +51,16 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
                     return None
                 
                 # Allow parsing JSON even if the content-type is text/html
-                data = await resp.json(content_type=None)
+                # First, read the text to ensure the response is not empty.
+                text = await resp.text()
+                if not text:
+                    logger.error(f"API request to {list_url} returned an empty response.")
+                    return None
+                try:
+                    data = json.loads(text)
+                except json.JSONDecodeError:
+                    logger.error(f"Failed to decode JSON from {list_url}. Response: {text[:200]}")
+                    return None
                 if data.get("errno") != 0:
                     logger.error(f"API error from share/list: {data.get('errmsg', 'Unknown error')}")
                     return None
@@ -77,7 +86,16 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
                     return None
                 
                 # Allow parsing JSON even if the content-type is text/html
-                verify_data = await resp.json(content_type=None)
+                text = await resp.text()
+                if not text:
+                    logger.error(f"API request to {verify_url} returned an empty response.")
+                    return None
+                try:
+                    verify_data = json.loads(text)
+                except json.JSONDecodeError:
+                    logger.error(f"Failed to decode JSON from {verify_url}. Response: {text[:200]}")
+                    return None
+
                 if verify_data.get("errno") != 0:
                     logger.error(f"API error from share/verify: {verify_data.get('errmsg', 'Unknown error')}")
                     return None
@@ -112,7 +130,16 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
                         continue
                     
                     # Allow parsing JSON even if the content-type is text/html
-                    download_data = await resp.json(content_type=None)
+                    text = await resp.text()
+                    if not text:
+                        logger.warning(f"API request to {download_api_url} for fs_id {fs_id} returned an empty response.")
+                        continue
+                    try:
+                        download_data = json.loads(text)
+                    except json.JSONDecodeError:
+                        logger.warning(f"Failed to decode JSON from {download_api_url} for fs_id {fs_id}. Response: {text[:200]}")
+                        continue
+
                     if download_data.get("errno") != 0:
                         logger.warning(f"API error from share/download for fs_id {fs_id}: {download_data.get('errmsg')}")
                         continue
