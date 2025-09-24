@@ -4,7 +4,7 @@ import git
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from bot import config, logger
+from bot import logger, config
 
 
 async def run_command(command: str) -> tuple[str, str]:
@@ -34,7 +34,7 @@ async def func_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.effective_message
     user_id = update.effective_user.id
 
-    if user_id != config.OWNER_ID:
+    if user_id != getattr(config, 'OWNER_ID', None):
         await message.reply_text("Perintah ini hanya untuk pemilik bot.")
         return
 
@@ -79,7 +79,7 @@ async def func_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def func_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Memulai ulang bot (hanya untuk pemilik)."""
-    if update.effective_user.id == config.OWNER_ID:
+    if update.effective_user.id == getattr(config, 'OWNER_ID', None):
         await update.effective_message.reply_text("Memulai ulang bot...")
         restart()
     else:
