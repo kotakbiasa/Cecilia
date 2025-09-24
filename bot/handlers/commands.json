@@ -192,7 +192,7 @@
             "command": "update, restart",
             "function": "func_update",
             "module": ".handlers.owner_handlers.update"
-        }
+        },
 
         
         {
