@@ -38,24 +38,20 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Coba dapatkan URL gambar banner atau cover
         thumbnail_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
+        final_caption = caption
         
-        try:
-            if thumbnail_url:
-                # Tambahkan zero-width space dengan link gambar untuk membuat pratinjau di atas teks
-                final_caption = f"<a href='{thumbnail_url}'>&#8203;</a>{caption}"
-                await sent_message.edit_text(
-                    text=final_caption,
-                    reply_markup=reply_markup,
-                    disable_web_page_preview=False
-                )
-            else:
-                # Jika tidak ada gambar, kirim sebagai teks biasa
-                await sent_message.edit_text(
-                    text=caption,
-                    reply_markup=reply_markup
-                )
-            await sent_message.delete()
-            await message.reply_text(final_caption, reply_markup=reply_markup, disable_web_page_preview=False)
+        if thumbnail_url:
+            # Tambahkan zero-width space dengan link gambar untuk membuat pratinjau di atas teks
+            final_caption = f"<a href='{thumbnail_url}'>&#8203;</a>{caption}"
+            await sent_message.edit_text(
+                text=final_caption,
+                reply_markup=reply_markup,
+                disable_web_page_preview=False
+            )
+        else:
+            # Jika tidak ada gambar, kirim sebagai teks biasa
+            await sent_message.edit_text(text=caption, reply_markup=reply_markup)
+
     except Exception as e:
         logger.error(f"Gagal dalam proses pencarian anime: {e}")
         await sent_message.edit_text(f"Terjadi error saat memproses permintaan Anda: {e}")
