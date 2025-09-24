@@ -267,7 +267,7 @@ async def main():
     application.add_handler(InlineQueryHandler(inline_handler))
 
     # Registering ytdl callback handler
-    application.add_handler(CallbackQueryHandler(ytdl_callback_handler, pattern="^ytdl:"))
+    application.add_handler(CallbackQueryHandler(youtube_callback_handler, pattern="^ytdl:"))
 
     # Registering anime callback handler
     application.add_handler(CallbackQueryHandler(anime_callback_handler, pattern="^anime:"))
