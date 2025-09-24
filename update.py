@@ -53,30 +53,30 @@ async def func_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Periksa dan siapkan remote 'upstream'
         try:
-            upstream = repo.remote('main')
+            upstream = repo.remote('upstream')
             if upstream.url != UPSTREAM_REPO_URL:
                 logger.info(f"Memperbarui URL remote upstream ke {UPSTREAM_REPO_URL}")
                 upstream.set_url(UPSTREAM_REPO_URL)
         except git.exc.GitCommandError:
             logger.info(f"Membuat remote upstream baru untuk {UPSTREAM_REPO_URL}")
-            upstream = repo.create_remote('main', UPSTREAM_REPO_URL)
+            upstream = repo.create_remote('upstream', UPSTREAM_REPO_URL)
 
         # Fetch pembaruan dari upstream
         await sent_message.edit_text("Mengambil pembaruan dari repositori upstream...")
         upstream.fetch()
 
         old_commit = repo.head.commit
-        if old_commit == repo.remotes.upstream.refs.master.commit:
+        if old_commit == repo.remotes.upstream.refs.main.commit:
             await sent_message.edit_text("Bot sudah dalam versi terbaru dari repositori upstream. Tidak ada yang perlu diperbarui.")
             return
 
         # Cek apakah requirements.txt berubah dengan membandingkan commit
-        diff_output = repo.git.diff(f'{old_commit.hexsha}..upstream/master', '--', 'requirements.txt')
+        diff_output = repo.git.diff(f'{old_commit.hexsha}..upstream/main', '--', 'requirements.txt')
         requirements_changed = bool(diff_output)
 
         # Lakukan pull dari upstream master
-        logger.info("Menarik pembaruan dari upstream/master...")
-        upstream.pull('master')
+        logger.info("Menarik pembaruan dari upstream/main...")
+        upstream.pull('main')
 
         if requirements_changed:
             logger.info("requirements.txt berubah, menginstal dependensi baru...")

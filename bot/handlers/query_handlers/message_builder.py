@@ -62,9 +62,8 @@ def _format_airing_time(total_seconds: int) -> str:
 def build_anime_info_message_md(anime_data: dict, is_inline: bool = False) -> str:
     """Membangun teks caption untuk anime dalam format HTML."""
     title = anime_data['title']['romaji']
-    native_title = anime_data['title'].get('native', '')
-    title_link = f"<b><a href=\"{anime_data['siteUrl']}\">{escape(title)}</a></b>" if is_inline else f"<b>{escape(title)}</b>"
-    msg = f"{title_link} (<code>{escape(native_title)}</code>)\n\n"
+    native_title = anime_data['title'].get('native', '')    
+    msg = f"<b>{escape(title)}</b> (<code>{escape(native_title)}</code>)\n\n"
 
     description_en = clean_html(anime_data.get('description', ''))
 

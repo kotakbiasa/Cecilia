@@ -50,15 +50,18 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         fallback_image_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
         image_url = primary_image_url or fallback_image_url
 
-        final_caption = caption
+        # Gabungkan semua bagian pesan dalam format HTML
+        final_message_parts = []
         disable_preview = True
 
         if image_url:
             # Tambahkan link gambar tersembunyi untuk membuat pratinjau di atas teks
-            final_caption = f"<a href='{image_url}'>&#8203;</a>{caption}"
+            final_message_parts.append(f"<a href='{image_url}'>&#8203;</a>")
             disable_preview = False
+        
+        final_message_parts.append(caption)
 
-        await sent_message.edit_text(text=final_caption, reply_markup=reply_markup, parse_mode=ParseMode.HTML, disable_web_page_preview=disable_preview)
+        await sent_message.edit_text(text="".join(final_message_parts), reply_markup=reply_markup, parse_mode=ParseMode.HTML, disable_web_page_preview=disable_preview)
 
     except Exception as e:
         logger.error(f"Gagal dalam proses pencarian anime: {e}")
