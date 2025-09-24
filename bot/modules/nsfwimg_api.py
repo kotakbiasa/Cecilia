@@ -6,7 +6,7 @@ from html import escape
 
 NEKOBOT_NSFW = {
     "anal", "ass", "boobs", "gah", "gonewild", "hanal", "hass", "hboobs",
-    "hentai", "hkitsune", "hmidriff", "hneko", "hthigh",
+    "hentai", "hkitsune", "hmidriff", "hneko", "hthigh", "hololewd",
     "paizuri", "pgif", "pussy", "tentacle", "thigh", "yaoi",
 }
 

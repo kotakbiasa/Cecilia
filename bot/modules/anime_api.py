@@ -272,7 +272,11 @@ async def fetch_nekobot(session: aiohttp.ClientSession, category: str, limit: in
     """Fetches images from nekobot.xyz API by making multiple requests."""
 
     async def _fetch_one():
-        async with session.get(f"https://nekobot.xyz/api/image?type={category}") as resp:
+        # The API uses 'hololewd' for SFW Holo images.
+        api_category = category
+        if category == 'holo':
+            api_category = 'hololewd'
+        async with session.get(f"https://nekobot.xyz/api/image?type={api_category}") as resp:
             if resp.status == 200:
                 try:
                     data = await resp.json()
