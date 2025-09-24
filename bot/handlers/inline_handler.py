@@ -13,7 +13,7 @@ from telegram import (
     InlineKeyboardButton,
 )
 from telegram.ext import ContextTypes
-from telegram.constants import ChatType
+from telegram.constants import ChatType, ParseMode
 
 from bot import logger
 from bot.helpers import BuildKeyboard
@@ -21,7 +21,7 @@ from bot.utils.database import DBConstants, MemoryDB
 from bot.modules.utils import Utils
 from bot.modules.anilist import search_anime, search_manga, search_character
 from bot.handlers.query_handlers.message_builder import (
-    build_anime_info_message,
+    build_anime_info_message_md,
     build_manga_info_message,
     build_character_info_message,
     inlineQueryMaker,
@@ -144,14 +144,14 @@ async def _handle_anilist_search(query: Update.inline_query, message: str, conte
 
     # Proses hasil anime
     if anime_data:
-        message_content = await build_anime_info_message(anime_data, target_user, is_inline=True)
+        message_content = build_anime_info_message_md(anime_data)
         reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Lihat di Anilist", url=anime_data['siteUrl'])]])
         results.append(
             InlineQueryResultArticle(
                 id=f"anime_{anime_data['id']}",
                 title=f"Anime: {anime_data['title']['romaji']}",
                 description=f"Format: {anime_data.get('format', 'N/A')} | Skor: {anime_data.get('averageScore') / 10 if anime_data.get('averageScore') else 'N/A'}",
-                input_message_content=InputTextMessageContent(message_content, disable_web_page_preview=False),
+                input_message_content=InputTextMessageContent(message_content, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False),
                 thumbnail_url=anime_data.get('coverImage', {}).get('extraLarge'),
                 reply_markup=reply_markup,
             )
