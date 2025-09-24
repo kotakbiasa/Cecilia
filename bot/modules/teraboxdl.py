@@ -10,7 +10,7 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
     "Connection": "keep-alive",
     "DNT": "1",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
     "Referer": f"{API_BASE}/",
 }
 
@@ -50,7 +50,8 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
                     logger.error(f"API request to {list_url} failed with status {resp.status}")
                     return None
                 
-                data = await resp.json()
+                # Allow parsing JSON even if the content-type is text/html
+                data = await resp.json(content_type=None)
                 if data.get("errno") != 0:
                     logger.error(f"API error from share/list: {data.get('errmsg', 'Unknown error')}")
                     return None
@@ -75,7 +76,8 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
                     logger.error(f"API request to {verify_url} failed with status {resp.status}")
                     return None
                 
-                verify_data = await resp.json()
+                # Allow parsing JSON even if the content-type is text/html
+                verify_data = await resp.json(content_type=None)
                 if verify_data.get("errno") != 0:
                     logger.error(f"API error from share/verify: {verify_data.get('errmsg', 'Unknown error')}")
                     return None
@@ -109,7 +111,8 @@ async def terabox_download(url: str, pwd: str = "") -> list[dict] | None:
                         logger.warning(f"Download link request for fs_id {fs_id} failed with status {resp.status}")
                         continue
                     
-                    download_data = await resp.json()
+                    # Allow parsing JSON even if the content-type is text/html
+                    download_data = await resp.json(content_type=None)
                     if download_data.get("errno") != 0:
                         logger.warning(f"API error from share/download for fs_id {fs_id}: {download_data.get('errmsg')}")
                         continue
