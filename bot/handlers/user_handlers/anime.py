@@ -75,6 +75,18 @@ async def _build_anime_info_layout(anime_data: dict) -> tuple[str, InlineKeyboar
     reply_markup = InlineKeyboardMarkup(buttons)
     return caption, reply_markup
 
+async def _edit_message_with_preview(query: Update.callback_query, new_caption: str, new_markup: InlineKeyboardMarkup, anime_data: dict):
+    """Helper to edit message while preserving the top image preview."""
+    image_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
+    final_text = new_caption
+    disable_preview = True
+
+    if image_url:
+        final_text = f"<a href='{image_url}'>&#8203;</a>{new_caption}"
+        disable_preview = False
+
+    await query.edit_message_text(text=final_text, reply_markup=new_markup, disable_web_page_preview=disable_preview)
+
 async def anime_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Menangani penekanan tombol untuk modul anime."""
     query = update.callback_query
@@ -90,7 +102,7 @@ async def anime_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
 
     anime_data = context.user_data.get(f"anime_{anime_id}")
     if not anime_data:
-        await query.edit_message_caption(caption="Sesi telah berakhir. Silakan mulai pencarian baru.", reply_markup=None)
+        await query.edit_message_text(text="Sesi telah berakhir. Silakan mulai pencarian baru.", reply_markup=None)
         return
 
     if action == 'chars':
@@ -125,8 +137,8 @@ async def anime_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         buttons = [[InlineKeyboardButton("« Kembali", callback_data=f"anime:info:{anime_id}")]]
         reply_markup = InlineKeyboardMarkup(buttons)
         
-        await query.edit_message_caption(caption=caption, reply_markup=reply_markup)
+        await _edit_message_with_preview(query, caption, reply_markup, anime_data)
 
     elif action == 'info':
         caption, reply_markup = await _build_anime_info_layout(anime_data)
-        await query.edit_message_caption(caption=caption, reply_markup=reply_markup)
+        await _edit_message_with_preview(query, caption, reply_markup, anime_data)

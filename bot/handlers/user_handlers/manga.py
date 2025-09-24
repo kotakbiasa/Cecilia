@@ -28,10 +28,19 @@ async def func_manga(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons = [[InlineKeyboardButton("Lihat di Anilist", url=manga_data['siteUrl'])]]
         reply_markup = InlineKeyboardMarkup(buttons)
 
-        thumbnail_url = manga_data.get('bannerImage') or manga_data.get('coverImage', {}).get('extraLarge')
+        image_url = manga_data.get('bannerImage') or manga_data.get('coverImage', {}).get('extraLarge')
+        final_caption = caption
+        disable_preview = True
 
-        await message.reply_photo(photo=thumbnail_url, caption=caption, reply_markup=reply_markup)
-        await sent_message.delete()
+        if image_url:
+            final_caption = f"<a href='{image_url}'>&#8203;</a>{caption}"
+            disable_preview = False
+
+        await sent_message.edit_text(
+            text=final_caption,
+            reply_markup=reply_markup,
+            disable_web_page_preview=disable_preview
+        )
 
     except Exception as e:
         logger.error(f"Gagal dalam proses pencarian manga: {e}")

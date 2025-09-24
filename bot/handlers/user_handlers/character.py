@@ -29,8 +29,19 @@ async def func_character(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons = [[InlineKeyboardButton("Lihat di Anilist", url=char_data['siteUrl'])]]
         reply_markup = InlineKeyboardMarkup(buttons)
 
-        await message.reply_photo(photo=char_data['image']['large'], caption=caption, reply_markup=reply_markup)
-        await sent_message.delete()
+        image_url = char_data.get('image', {}).get('large')
+        final_caption = caption
+        disable_preview = True
+
+        if image_url:
+            final_caption = f"<a href='{image_url}'>&#8203;</a>{caption}"
+            disable_preview = False
+
+        await sent_message.edit_text(
+            text=final_caption,
+            reply_markup=reply_markup,
+            disable_web_page_preview=disable_preview
+        )
 
     except Exception as e:
         logger.error(f"Gagal dalam proses pencarian karakter: {e}")
