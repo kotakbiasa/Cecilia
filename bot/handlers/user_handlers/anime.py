@@ -35,39 +35,27 @@ async def func_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data[f"anime_{anime_id}"] = anime_data
 
         caption, reply_markup = await _build_anime_info_layout(anime_data)
-
-        # Construct image URL using img.anili.st service, which is often higher quality
-        thumbnail_url = anime_data['siteUrl'].replace("anilist.co/anime/", "img.anili.st/media/")
-
+        
+        # Coba dapatkan URL gambar banner atau cover
+        thumbnail_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
+        
         try:
-            # Kirim sebagai foto dengan caption untuk menampilkan gambar di atas
-            await message.reply_photo(
-                photo=thumbnail_url,
-                caption=caption,
-                reply_markup=reply_markup
-            )
-            await sent_message.delete()
-            return
-        except Exception as e:
-            logger.warning(f"Gagal mengirim dengan thumbnail_url {thumbnail_url}: {e}. Mencoba fallback.")
-
-        # Fallback to bannerImage or coverImage if the primary URL fails
-        fallback_url = anime_data.get('bannerImage') or anime_data.get('coverImage', {}).get('extraLarge')
-        if fallback_url:
-            try:
-                await message.reply_photo(
-                    photo=fallback_url,
-                    caption=caption,
+            if thumbnail_url:
+                # Tambahkan zero-width space dengan link gambar untuk membuat pratinjau di atas teks
+                final_caption = f"<a href='{thumbnail_url}'>&#8203;</a>{caption}"
+                await sent_message.edit_text(
+                    text=final_caption,
+                    reply_markup=reply_markup,
+                    disable_web_page_preview=False
+                )
+            else:
+                # Jika tidak ada gambar, kirim sebagai teks biasa
+                await sent_message.edit_text(
+                    text=caption,
                     reply_markup=reply_markup
                 )
-                await sent_message.delete()
-                return
-            except Exception as final_e:
-                logger.error(f"Gagal mengirim dengan fallback_url {fallback_url}: {final_e}")
-        
-        # If all image attempts fail, send as text by editing the wait message
-        await sent_message.edit_text(caption, reply_markup=reply_markup)
-
+            await sent_message.delete()
+            await message.reply_text(final_caption, reply_markup=reply_markup, disable_web_page_preview=False)
     except Exception as e:
         logger.error(f"Gagal dalam proses pencarian anime: {e}")
         await sent_message.edit_text(f"Terjadi error saat memproses permintaan Anda: {e}")
