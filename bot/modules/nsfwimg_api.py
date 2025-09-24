@@ -1,12 +1,13 @@
 import aiohttp
 import asyncio
 from html import escape
+from bot.modules.anime_api import fetch_nekobot
 
 # --- API Category Definitions ---
 
 NEKOBOT_NSFW = {
     "anal", "ass", "boobs", "gah", "gonewild", "hanal", "hass", "hboobs",
-    "hentai", "hkitsune", "hmidriff", "hneko", "hthigh", "hololewd",
+    "hentai", "hkitsune", "hmidriff", "hneko", "hthigh",
     "paizuri", "pgif", "pussy", "tentacle", "thigh", "yaoi",
 }
 
@@ -26,27 +27,9 @@ NEKOSAPI_NSFW = {
 
 # --- API Fetcher Functions ---
 
-async def fetch_nekobot_nsfw(session: aiohttp.ClientSession, category: str, limit: int = 1) -> tuple[list[dict] | None, str | None]:
-    """Fetches NSFW images from nekobot.xyz API by making multiple requests."""
-
-    async def _fetch_one():
-        async with session.get(f"https://nekobot.xyz/api/image?type={category}") as resp:
-            if resp.status == 200:
-                try:
-                    data = await resp.json()
-                    if data.get("success"):
-                        return data.get("message")
-                except aiohttp.ContentTypeError:
-                    return None
-        return None
-
-    tasks = [_fetch_one() for _ in range(limit)]
-    try:
-        urls = await asyncio.gather(*tasks)
-        media_list = [{"url": url, "caption": ""} for url in urls if url]
-        return (media_list, None) if media_list else (None, f"nekobot.xyz API did not return any NSFW images for `{category}`.")
-    except Exception as e:
-        return None, f"An error occurred while fetching from nekobot.xyz: {e}"
+async def fetch_nekobot_nsfw(session: aiohttp.ClientSession, category: str, limit: int = 1, tags: list[str] | None = None) -> tuple[list[dict] | None, str | None]:
+    """Wrapper for fetch_nekobot to fetch NSFW images."""
+    return await fetch_nekobot(session, category, limit, tags, is_nsfw=True)
 
 async def fetch_waifu_im_nsfw(session: aiohttp.ClientSession, category: str, limit: int = 1) -> tuple[list[dict] | None, str | None]:
     """Fetches NSFW images from waifu.im API."""

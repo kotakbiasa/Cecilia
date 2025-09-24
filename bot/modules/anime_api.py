@@ -268,20 +268,23 @@ async def fetch_pic_re(session: aiohttp.ClientSession, category: str, limit: int
     except Exception as e:
         return None, f"An error occurred while fetching from pic.re: {e}"
 
-async def fetch_nekobot(session: aiohttp.ClientSession, category: str, limit: int = 1, tags: list[str] | None = None) -> tuple[list[dict] | None, str | None]:
-    """Fetches images from nekobot.xyz API by making multiple requests."""
+async def fetch_nekobot(session: aiohttp.ClientSession, category: str, limit: int = 1, tags: list[str] | None = None, is_nsfw: bool = False) -> tuple[list[dict] | None, str | None]:
+    """
+    Fetches images from nekobot.xyz API by making multiple requests.
+    Handles both SFW and NSFW categories.
+    """
 
     async def _fetch_one():
-        # The API uses 'hololewd' for SFW Holo images.
         api_category = category
-        if category == 'holo':
+        # The API uses 'hololewd' for SFW Holo images, but it's listed under NSFW categories.
+        if category == 'holo' or category == 'hololewd':
             api_category = 'hololewd'
+
         async with session.get(f"https://nekobot.xyz/api/image?type={api_category}") as resp:
             if resp.status == 200:
                 try:
                     data = await resp.json()
-                    if data.get("success"):
-                        return data.get("message")
+                    return data.get("message") if data.get("success") else None
                 except aiohttp.ContentTypeError:
                     return None
         return None
@@ -290,7 +293,8 @@ async def fetch_nekobot(session: aiohttp.ClientSession, category: str, limit: in
     try:
         urls = await asyncio.gather(*tasks)
         media_list = [{"url": url, "caption": ""} for url in urls if url]
-        return (media_list, None) if media_list else (None, f"nekobot.xyz API did not return any images for `{category}`.")
+        error_msg = f"nekobot.xyz API did not return any {'NSFW ' if is_nsfw else ''}images for `{category}`."
+        return (media_list, None) if media_list else (None, error_msg)
     except Exception as e:
         return None, f"An error occurred while fetching from nekobot.xyz: {e}"
 
