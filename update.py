@@ -1,40 +1,86 @@
-import os
-import shutil
-from subprocess import run as srun
+import asyncio
+import sys
+import git
+from telegram import Update
+from telegram.ext import ContextTypes
 
-UPSTREAM_REPO = "https://github.com/bishalqx980/tgbot"
-UPSTREAM_BRANCH = "main"
+from bot import config, logger
 
-print(f"Updating repo to latest commit...\nUPSTREAM_REPO: {UPSTREAM_REPO}\nUPSTREAM_BRANCH: {UPSTREAM_BRANCH}")
-if os.path.exists(".git"):
+
+async def run_command(command: str) -> tuple[str, str]:
+    """Menjalankan perintah shell dan mengembalikan outputnya."""
+    process = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await process.communicate()
+    return stdout.decode('utf-8').strip(), stderr.decode('utf-8').strip()
+
+
+def restart():
+    """Memulai ulang bot."""
+    logger.info("Memulai ulang bot...")
+    # Mengganti proses saat ini dengan instance baru
+    # sys.executable adalah path ke interpreter Python saat ini
+    # sys.argv adalah daftar argumen baris perintah saat ini
+    sys.stdout.flush()
+    sys.stderr.flush()
+    sys.exit(0)
+
+
+async def func_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Memperbarui bot dari repositori Git dan memulai ulang."""
+    message = update.effective_message
+    user_id = update.effective_user.id
+
+    if user_id != config.OWNER_ID:
+        await message.reply_text("Perintah ini hanya untuk pemilik bot.")
+        return
+
+    sent_message = await message.reply_text("Mencoba memperbarui bot...")
+
     try:
-        srun(["rm", "-rf", ".git"]) # linux only
+        repo = git.Repo(search_parent_directories=True)
+        
+        # Periksa apakah ada perubahan lokal yang belum di-commit
+        if repo.is_dirty(untracked_files=True):
+            await sent_message.edit_text("Ada perubahan lokal yang belum di-commit. Harap commit atau stash perubahan tersebut terlebih dahulu.")
+            return
+
+        origin = repo.remotes.origin
+        logger.info("Menarik pembaruan dari Git...")
+        pull_info = origin.pull()
+
+        # Cek apakah ada pembaruan
+        if pull_info and pull_info[0].flags & git.remote.FetchInfo.HEAD_UPTODATE:
+            await sent_message.edit_text("Bot sudah dalam versi terbaru. Tidak ada yang perlu diperbarui.")
+            return
+
+        # Cek apakah requirements.txt berubah
+        diff_index = repo.index.diff("HEAD~1")
+        requirements_changed = any(diff.a_path == 'requirements.txt' for diff in diff_index)
+
+        if requirements_changed:
+            logger.info("requirements.txt berubah, menginstal dependensi baru...")
+            await sent_message.edit_text("Menginstal dependensi baru...")
+            stdout, stderr = await run_command(f"{sys.executable} -m pip install -r requirements.txt")
+            if stderr:
+                await sent_message.edit_text(f"Gagal menginstal dependensi:\n<code>{stderr}</code>")
+                return
+
+        await sent_message.edit_text("Pembaruan berhasil. Memulai ulang bot sekarang...")
+        restart()
+
     except Exception as e:
-        print(e)
-        try:
-            shutil.rmtree(".git")
-        except Exception as e:
-            print(e)
+        logger.error(f"Gagal memperbarui bot: {e}")
+        await sent_message.edit_text(f"Gagal memperbarui bot: {e}")
 
-commands = [
-    f"git init -b {UPSTREAM_BRANCH}",
-    "git config --global user.name Bishal Hasan Bhuiyan",
-    "git config --global user.email bishalqx680@gmail.com",
-    "git add .",
-    "git commit -m update",
-    f"git remote add origin {UPSTREAM_REPO}",
-    "git fetch origin",
-    f"git reset --hard origin/{UPSTREAM_BRANCH}"
-]
 
-for command in commands:
-    process = srun(command, capture_output=True, text=True, shell=True)
-    print_out = process.stdout or process.stderr or None
-    print(print_out)
-    
-    open("update.txt", "a").write(print_out)
-
-if process.returncode == 0:
-    print(f"Successfully updated with latest commit from {UPSTREAM_REPO}")
-else:
-    print("Something went wrong! repo not updated...")
+async def func_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Memulai ulang bot (hanya untuk pemilik)."""
+    if update.effective_user.id == config.OWNER_ID:
+        await update.effective_message.reply_text("Memulai ulang bot...")
+        restart()
+    else:
+        await update.effective_message.reply_text("Perintah ini hanya untuk pemilik bot.")
