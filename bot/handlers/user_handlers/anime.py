@@ -1,10 +1,8 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-import aiohttp
 
 from bot import logger
 from bot.modules.anilist import search_anime
-from bot.modules.ryzumi_api import get_ytmp4_media
 from bot.handlers.query_handlers.message_builder import (
     build_anime_info_message
 )
@@ -67,8 +65,8 @@ async def _build_anime_info_layout(anime_data: dict) -> tuple[str, InlineKeyboar
     trailer = anime_data.get('trailer')
     if trailer and trailer.get('site') == 'youtube' and trailer.get('id'):
         # Log that a trailer was found to help with debugging
-        logger.info(f"Trailer ditemukan untuk anime ID {anime_data['id']}: {trailer}")
-        first_row.append(InlineKeyboardButton("🎬 Trailer", callback_data=f"anime:trailer:{anime_data['id']}"))
+        youtube_url = f"https://www.youtube.com/watch?v={trailer['id']}"
+        first_row.append(InlineKeyboardButton("🎬 Trailer", url=youtube_url))
     buttons.append(first_row)
 
     if anime_data.get('characters') and anime_data['characters'].get('edges'):
@@ -132,67 +130,3 @@ async def anime_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
     elif action == 'info':
         caption, reply_markup = await _build_anime_info_layout(anime_data)
         await query.edit_message_caption(caption=caption, reply_markup=reply_markup)
-
-    elif action == 'trailer':
-        await query.edit_message_reply_markup(reply_markup=None)
-        sent_msg = await query.message.reply_text("Memproses trailer, mohon tunggu...")
-
-        trailer_data = anime_data.get('trailer')
-        youtube_url = None
-        if trailer_data and trailer_data.get('site') == 'youtube' and trailer_data.get('id'):
-            youtube_url = f"https://www.youtube.com/watch?v={trailer_data['id']}"
-
-        if not youtube_url:
-            await sent_msg.edit_text("Trailer YouTube tidak ditemukan untuk anime ini.")
-            return
-
-        # Menggunakan API untuk mendapatkan link video langsung, default ke 480p
-        video_data = await get_ytmp4_media(youtube_url, "480")
-
-        if not (video_data and video_data.get("url")):
-            error_detail = video_data.get("message", "Kualitas tidak tersedia.") if video_data else "Gagal mendapatkan respons dari API."
-            await sent_msg.edit_text(f"Maaf, gagal memproses video trailer. {error_detail}\n\nCoba manual: {youtube_url}")
-            return
-        
-        direct_video_url = video_data["url"]
-        
-        # Build caption with description from the API response
-        trailer_title = video_data.get("title", anime_data['title']['romaji'])
-        trailer_desc_en = video_data.get("description")
-        trailer_desc = ""
-        from bot.modules.translator import translate
-
-        if trailer_desc_en:
-            translated_desc = await asyncio.to_thread(translate, trailer_desc_en, 'id')
-            if translated_desc:
-                trailer_desc = translated_desc
-            else:
-                trailer_desc = trailer_desc_en # Fallback
-
-        caption = f"<b>Trailer: {trailer_title}</b>"
-        if trailer_desc:
-            # Truncate description if it's too long for a caption
-            if len(trailer_desc) > 250:
-                trailer_desc = trailer_desc[:250].strip() + "..."
-            caption += f"\n\n<blockquote expandable>{trailer_desc}</blockquote>"
-        
-        try:
-            await sent_msg.edit_text("Mengunduh video trailer...")
-            async with aiohttp.ClientSession() as session:
-                # Set a reasonable timeout for the download itself
-                async with session.get(direct_video_url, timeout=300) as resp:
-                    if not resp.ok:
-                        await sent_msg.edit_text(f"Gagal mengunduh trailer dari sumber (HTTP {resp.status}).\n\nLink Manual: {youtube_url}")
-                        return
-                    video_content = await resp.read()
-
-            await sent_msg.edit_text("Mengirim video trailer...")
-            # Send the downloaded bytes instead of the URL
-            await query.message.reply_video(video=video_content, caption=caption, write_timeout=600)
-            await sent_msg.delete()
-        except aiohttp.ServerTimeoutError:
-            logger.error(f"Gagal mengunduh video trailer anime (timeout saat mengunduh): {youtube_url}")
-            await sent_msg.edit_text(f"Gagal mengunduh trailer karena timeout.\n\nLink Manual: {youtube_url}")
-        except Exception as e:
-            logger.error(f"Gagal mengirim video trailer anime: {e}")
-            await sent_msg.edit_text(f"Gagal mengirim video. Mungkin file terlalu besar atau terjadi error.\n\nLink Manual: {youtube_url}")
