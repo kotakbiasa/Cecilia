@@ -25,7 +25,7 @@ from telegram.error import BadRequest, Conflict, NetworkError, TimedOut
 from telegram.constants import ChatID, ParseMode
 
 from bot.handlers.inline_handler import inline_handler
-from bot.handlers.user_handlers.ytdl import youtub e_callback_handler
+from bot.handlers.user_handlers.ytdl import youtube_callback_handler
 from bot.handlers.user_handlers.anime import anime_callback_handler
 
 from . import COMMANDS_FILE_PATH, DEFAULT_ERROR_CHANNEL_ID, RUN_SERVER, bot, logger, config
