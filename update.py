@@ -59,7 +59,7 @@ async def func_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 upstream.set_url(UPSTREAM_REPO_URL)
         except git.exc.GitCommandError:
             logger.info(f"Membuat remote upstream baru untuk {UPSTREAM_REPO_URL}")
-            upstream = repo.create_remote('upstream', UPSTREAM_REPO_URL)
+            upstream = repo.create_remote('main', UPSTREAM_REPO_URL)
 
         # Fetch pembaruan dari upstream
         await sent_message.edit_text("Mengambil pembaruan dari repositori upstream...")
