@@ -37,15 +37,15 @@ async def _handle_instructions(query: Update.inline_query, context: ContextTypes
     instruction_message = (
         "<blockquote><b>Petunjuk: Mode inline yang tersedia</b></blockquote>\n\n"
         "<b>• Cari:</b> Ketik untuk mencari Anime, Manga, atau Karakter.\n"
-        f"   <i>- Contoh: <code>@{context.bot.name} Steins;Gate</code> atau <code>@{context.bot.name} @username Steins;Gate</code></i>\n\n"
+        f"   <i>- Contoh: <code>{context.bot.name} anime Steins;Gate</code> atau <code>@{context.bot.name} @username anime Steins;Gate</code></i>\n\n"
         "<b>• Bisikan:</b> Kirim pesan rahasia di grup!\n"
-        f"   <i>- Contoh: <code>@{context.bot.name} whisper @username Pesan rahasia ini 😜</code></i>\n\n"
+        f"   <i>- Contoh: <code>{context.bot.name} whisper @username Pesan rahasia ini 😜</code></i>\n\n"
         f"<b>• Info Pengguna:</b> Dapatkan info Anda!\n"
-        f"   <i>- Contoh: <code>@{context.bot.name} info</code></i>\n\n"
+        f"   <i>- Contoh: <code>{context.bot.name} info</code></i>\n\n"
         "<b>• Base64:</b> Encode/Decode base64 di obrolan manapun!\n"
-        f"   <i>- Contoh: <code>@{context.bot.name} base64 data atau teks biasa</code></i>\n\n"
+        f"   <i>- Contoh: <code>{context.bot.name} base64 data atau teks biasa</code></i>\n\n"
         "<b>• Gemini AI:</b> Tanyakan apa saja pada Gemini.\n"
-        f"   <i>- Contoh: <code>@{context.bot.name} gpt apa itu cinta?</code></i>\n\n"
+        f"   <i>- Contoh: <code>{context.bot.name} gpt apa itu cinta?</code></i>\n\n"
         "<b>• Kode Sumber:</b> <a href='https://github.com/kotakbiasa/Cecilia'>GitHub</a>\n"
     )
     results = [inlineQueryMaker("ℹ️ Petunjuk", instruction_message, description="Klik untuk melihat petunjuk...!")]
