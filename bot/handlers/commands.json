@@ -312,16 +312,6 @@
             "module": ".handlers.user_handlers.ytdl"
         },
         {
-            "command": "fbdl",
-            "function": "func_facebookdl",
-            "module": ".handlers.user_handlers.facebookdl"
-        },
-        {
-            "command": "tiktokdl",
-            "function": "func_tiktokdl",
-            "module": ".handlers.user_handlers.tiktokdl"
-        },
-        {
             "command": "instadl",
             "function": "func_instagramdl",
             "module": ".handlers.user_handlers.instagramdl"
