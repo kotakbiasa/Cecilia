@@ -190,18 +190,6 @@
         },
 
         {
-            "command": "update",
-            "function": "func_update",
-            "module": ".handlers.owner_handlers.update"
-        },
-        
-        {
-            "command": "restart",
-            "function": "func_restart",
-            "module": ".handlers.owner_handlers.update"
-        },
-
-        {
             "command": "decode",
             "function": "func_decode",
             "module": ".handlers.user_handlers.b64decode"
