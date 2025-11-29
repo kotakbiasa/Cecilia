@@ -5,7 +5,7 @@ RUN chmod 777 /usr/src/app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libzbar0 \
+    libzbar0 git \
     && rm -rf /var/lib/apt/lists/*
 
 # Create and activate virtual environment
